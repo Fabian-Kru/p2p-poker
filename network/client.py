@@ -15,14 +15,16 @@ class P2PClient:
         print("Client started with uid:", self.uid)
 
     async def send_some_data(self):
+        if self.port == -1:
+            print("Cannot connect to bootstrap server")
+            return
         s = socket.socket()
         s.connect((self.host, self.port))
         d = ClientMetaData(self.uid)
         st = pickle.dumps(d)  # serialize object -> bytes
         s.send(st)
-        text = await ainput()
+        text = st
         while text != 'quit':
-            s.send(pickle.dumps(Message(text)))
-            text = await ainput()
+            s.send(text)
+            text = pickle.dumps(Message(await ainput()))
         s.close()
-
