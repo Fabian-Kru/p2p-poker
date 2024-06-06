@@ -1,6 +1,6 @@
 import pickle
 import socket
-
+from aioconsole import ainput
 from data.ClientMetaData import ClientMetaData
 from data.Message import Message
 
@@ -20,8 +20,9 @@ class P2PClient:
         d = ClientMetaData(self.uid)
         st = pickle.dumps(d)  # serialize object -> bytes
         s.send(st)
-        input("Enter to send message")
-        s.send(pickle.dumps(Message("Hello world!")))
-        input("Enter to exit")
+        text = await ainput()
+        while text != 'quit':
+            s.send(pickle.dumps(Message(text)))
+            text = await ainput()
         s.close()
 
