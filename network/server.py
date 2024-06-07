@@ -44,12 +44,15 @@ class P2PServer:
             if isinstance(o, ClientMetaData):
                 self.clients[client.getpeername()] = (client.getpeername(), o)
                 print(f"New client detected {client.getpeername()} as {o.name}")
-                # send known connections and request client to deliver
-                #client.send(pickle.dumps(AnnouncePeerMessage(self.clients, True)))
             elif isinstance(o, Message.Message):
                 print(f"{self.clients[client.getpeername()][1].name}: {o.message}")
             elif isinstance(o, AnnouncePeerMessage):
                 print(f"Announced: {self.clients[client.getpeername()][1].name}: {o}")
+
+                if o.deliver:
+                    # send known connections (#TODO and request client to deliver?)
+                    client.send(pickle.dumps(AnnouncePeerMessage(self.clients, False)))
+
             else:
                 print(f"Unknown object received {o}")
             # TODO handle request, store client information, etc.
