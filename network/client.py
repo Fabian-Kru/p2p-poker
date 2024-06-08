@@ -1,44 +1,56 @@
+import asyncio
 import pickle
 import socket
-from aioconsole import ainput
 
 from data.AnnouncePeerMessage import AnnouncePeerMessage
 from data.ClientMetaData import ClientMetaData
-from data.Message import Message
 
 
 class P2PClient:
 
-    def __init__(self, bootstrap_port, name):
+    def __init__(self, node, bootstrap_port, name):
+        self.server = node.server
+        self.node = node
         self.client = None
-        self.uid = "client-" + name
+        self.uid = name
         self.host = "127.0.0.1"
         self.port = bootstrap_port
         self.clients = []
-        print("Client started with uid:", self.uid)
+        print("[client] Started with uid:", self.uid, self.port)
+
+    async def receive_data(self, client_socket):
+        while True:
+            try:
+                response = await asyncio.to_thread(client_socket.recv, 1024)
+                if response:
+                    data = pickle.loads(response)
+
+                    if isinstance(data, AnnouncePeerMessage):
+                        print("[client] >Announce message received", data.known_connections, self.server.connections)
+                        for newPeers in data.known_connections:
+                            print("[client] Connecting to new peer", newPeers[1])
+                            self.node.connectToNode("127.0.0.1", newPeers[1])
+                    else:
+                        print("[client] Received unknown: ", data)
+                else:
+                    client_socket.close()
+                    break
+            except Exception as e:
+                print(e)
+                client_socket.close()
+                break
 
     async def send_some_data(self):
         if self.port == -1:
-            print("Cannot connect to bootstrap server")
+            print("[client] Cannot connect to bootstrap server")
             return
-        s = socket.socket()
-        s.connect((self.host, self.port))
-        meta = ClientMetaData(self.uid)
-        # request targeted server to send known connections
-        # pickle.dumps(meta) serialize object -> bytes
-        s.send(pickle.dumps(meta))
-        # TODO handle response
-        text = await ainput()
-        while text != 'quit':
+        client_socket = socket.socket()
+        client_socket.connect((self.host, self.port))
 
-            if text == "announce" or text == "a":
-                data = pickle.dumps(AnnouncePeerMessage(None, False))
-                s.send(data)
-                print("Sending announce")
-                text = await ainput()
-                continue
+        asyncio.ensure_future(self.receive_data(client_socket))
 
-            print("Sending: ", pickle.loads(text))
-            s.send(pickle.dumps(Message(pickle.loads(text))))
-            text = await ainput()
-        s.close()
+        client_socket.send(pickle.dumps(ClientMetaData(self.uid, self.server.port)))
+        await asyncio.sleep(1)
+        # TODO send known own client via AnnouncePeerMessage to all clients
+
+        #  client_socket.close()
