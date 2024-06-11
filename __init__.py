@@ -1,5 +1,4 @@
-def main():
-    print('Hello, World!')
+from tui import tui
 
-
-main()
+if __name__ == "__main__":
+    tui.open_main()
