@@ -30,9 +30,14 @@ class P2PNode:
 
     async def process_input(self, command):
 
+        if command == "search_game":
+            print("[server] Searching for game")
+            # Send to all connected clients -> ttl of 1-2
+            return
+
         if command == "list":
             print("[server] clients:", [c.uid for c in self.clients])
-            print("[client] clients", [v.name for k,v in self.server.clients.items()])
+            print("[client] clients", [v.name for k, v in self.server.clients.items()])
             return
 
 
