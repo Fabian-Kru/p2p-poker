@@ -2,8 +2,8 @@ from treys import Card, Deck, Evaluator
 import math
 import random
 from pprint import pprint
-
-players = ["p1", "p2", "p3", "p4"]
+import player
+import enums
 
 ranks = {0: "2", 1: "3", 2: "4", 3: "5", 4: "6", 5: "7", 6: "8", 7: "9", 8: "T", 9: "J", 10: "Q", 11: "K", 12: "A"}
 suits = {0: "s", 1: "h", 2: "d", 3: "c"}
@@ -14,6 +14,9 @@ class Poker:
     def __init__(self):
 
         self.table_state = {}
+        self.players = {}
+        self.card_state = {}
+        self.round = 0
 
     def deal_cards(self):
         """
@@ -25,7 +28,7 @@ class Poker:
         deck = Deck()
 
         self.table_state["board"] = deck.draw(5)
-        for player in players:
+        for player in self.players:
             self.table_state[player] = deck.draw(2)
 
         key_dict = {}
