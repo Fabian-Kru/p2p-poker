@@ -28,7 +28,7 @@ class P2PServer:
         self.port = port  # system will pick a random port, if port == 0
         self.node = node
 
-    async def start(self,node, bp):
+    async def start(self, node, bp):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((self.host, self.port))
         self.node.sp = self.server.getsockname()[1]
@@ -41,7 +41,6 @@ class P2PServer:
         while True:
             client, _ = await asyncio.get_event_loop().sock_accept(self.server)
             asyncio.ensure_future(self.__handle_client(client))  # ensure_future -> run in background
-
 
     async def __handle_client(self, client):
         """
@@ -83,3 +82,8 @@ class P2PServer:
                 print(f"[server] Unknown object received {o}")
             # TODO handle request, store client information, etc.
         client.close()
+
+    async def broadcast_message(self, message):
+        for client in self.connections:
+            client.send(pickle.dumps(message))
+

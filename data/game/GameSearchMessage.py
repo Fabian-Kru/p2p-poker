@@ -10,4 +10,4 @@ class GameSearchMessage:
         self.ttl = ttl
 
     def __str__(self):
-        return "GameSearchMessage: " + self.ttl
+        return "GameSearchMessage: ttl=" + str(self.ttl)

@@ -5,6 +5,7 @@ import threading
 from aioconsole import ainput
 
 from client import P2PClient
+from data.game.GameSearchMessage import GameSearchMessage
 from server import P2PServer
 
 
@@ -18,9 +19,10 @@ class P2PNode:
 
     def connectToNode(self, ip, port):
         c = P2PClient(self, port, "client-" + str(self.sp))
-        asyncio.ensure_future(c.send_some_data())
         print(f"[server] Connecting to {ip}:{port} with new client")
         self.clients.append(c)
+        asyncio.ensure_future(c.send_some_data())
+
 
     async def run(self):
         if bootstrap_port == -1:
@@ -33,13 +35,13 @@ class P2PNode:
         if command == "search_game":
             print("[server] Searching for game")
             # Send to all connected clients -> ttl of 1-2
+            await self.server.broadcast_message(GameSearchMessage(ttl=2))
             return
 
         if command == "list":
             print("[server] clients:", [c.uid for c in self.clients])
             print("[client] clients", [v.name for k, v in self.server.clients.items()])
             return
-
 
 
 async def input_handler(_network):

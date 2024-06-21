@@ -4,6 +4,8 @@ import socket
 
 from data.AnnouncePeerMessage import AnnouncePeerMessage
 from data.ClientMetaData import ClientMetaData
+from data.game.GameJoinMessage import GameJoinMessage
+from data.game.GameSearchMessage import GameSearchMessage
 
 
 class P2PClient:
@@ -30,6 +32,10 @@ class P2PClient:
                         for newPeers in data.known_connections:
                             print("[client] Connecting to new peer", newPeers[1])
                             self.node.connectToNode("127.0.0.1", newPeers[1])
+                    elif isinstance(data, GameSearchMessage):
+                        print("[client] >GameSearchMessage received", data)
+                        client_socket.send(pickle.dumps(GameJoinMessage("Joining game", "Player-1")))
+                        # TODO forward to neighbors if ttl > 0
                     else:
                         print("[client] Received unknown: ", data)
                 else:
@@ -40,13 +46,17 @@ class P2PClient:
                 client_socket.close()
                 break
 
+    async def send_message(self, message):
+        print("[client] Sending message:", message)
+        self.client.send(pickle.dumps(message))
+
     async def send_some_data(self):
         if self.port == -1:
             print("[client] Cannot connect to bootstrap server")
             return
         client_socket = socket.socket()
         client_socket.connect((self.host, self.port))
-
+        self.client = client_socket
         asyncio.ensure_future(self.receive_data(client_socket))
 
         client_socket.send(pickle.dumps(ClientMetaData(self.uid, self.server.port)))

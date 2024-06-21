@@ -1,6 +1,6 @@
 """
 
-data contains anya messages related to the network.
-game/ contains anya messages related to the game.
+data contains any messages related to the network.
+game/ contains any messages related to the game.
 
 """
