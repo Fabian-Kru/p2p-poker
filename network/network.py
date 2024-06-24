@@ -17,12 +17,15 @@ class P2PNode:
         self.bp = port
         self.sp = _server_port
 
-    def connectToNode(self, ip, port):
+    def connect_to_Node(self, ip, port):
         c = P2PClient(self, port, "client-" + str(self.sp))
         print(f"[server] Connecting to {ip}:{port} with new client")
         self.clients.append(c)
         asyncio.ensure_future(c.send_some_data())
 
+    async def broadcast_message(self, message):
+        for c in self.clients:
+            asyncio.ensure_future(c.send_message(message))
 
     async def run(self):
         if bootstrap_port == -1:
@@ -39,6 +42,7 @@ class P2PNode:
             return
 
         if command == "list":
+            print("[server] server:", self.server.uid, "[client] client: client-" + str(self.sp))
             print("[server] clients:", [c.uid for c in self.clients])
             print("[client] clients", [v.name for k, v in self.server.clients.items()])
             return
