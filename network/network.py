@@ -17,7 +17,7 @@ class P2PNode:
         self.bp = port
         self.sp = _server_port
 
-    def connect_to_Node(self, ip, port):
+    def connect_to_node(self, ip, port):
         c = P2PClient(self, port, "client-" + str(self.sp))
         print(f"[server] Connecting to {ip}:{port} with new client")
         self.clients.append(c)

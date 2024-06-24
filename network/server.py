@@ -37,7 +37,7 @@ class P2PServer:
         self.server.setblocking(False)
         print("[server] Started on port:", self.server.getsockname()[1])
         if bp != -1:
-            node.connect_to_Node("127.0.0.1", bp)
+            node.connect_to_node("127.0.0.1", bp)
         while True:
             client, _ = await asyncio.get_event_loop().sock_accept(self.server)
             asyncio.ensure_future(self.__handle_client(client))  # ensure_future -> run in background

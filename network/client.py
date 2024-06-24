@@ -31,7 +31,7 @@ class P2PClient:
                         print("[client] >Announce message received", data.known_connections, self.server.connections)
                         for newPeers in data.known_connections:
                             print("[client] Connecting to new peer", newPeers[1])
-                            self.node.connect_to_Node("127.0.0.1", newPeers[1])
+                            self.node.connect_to_node("127.0.0.1", newPeers[1])
                     elif isinstance(data, GameSearchMessage):
                         print("[client] >GameSearchMessage received", data)
                         client_socket.send(pickle.dumps(GameJoinMessage("Joining game", "Player-1")))
