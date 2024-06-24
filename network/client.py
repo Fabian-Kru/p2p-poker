@@ -35,10 +35,10 @@ class P2PClient:
                     elif isinstance(data, GameSearchMessage):
                         print("[client] >GameSearchMessage received", data)
                         client_socket.send(pickle.dumps(GameJoinMessage("Joining game", "Player-1")))
-                        # TODO forward to neighbors if ttl > 0
+                        # update ttl and forward to ttl clients
                         updated_message = GameSearchMessage(data.ttl - 1, self.uid)
-                        if updated_message.ttl > 0:
-                            await self.node.broadcast_message(updated_message)
+                        if updated_message.ttl > 0:  # only forward if ttl > 0
+                            await self.node.broadcast_message_with_ttl(updated_message)
 
                     else:
                         print("[client] Received unknown: ", data)
