@@ -1,12 +1,14 @@
+import treys
 from treys import Card, Deck, Evaluator
 import math
 import random
 from pprint import pprint
 import player
-import enums
+from enums import *
 
 ranks = {0: "2", 1: "3", 2: "4", 3: "5", 4: "6", 5: "7", 6: "8", 7: "9", 8: "T", 9: "J", 10: "Q", 11: "K", 12: "A"}
 suits = {0: "s", 1: "h", 2: "d", 3: "c"}
+
 
 
 class Poker:
@@ -16,15 +18,21 @@ class Poker:
         self.card_state = {}
         self.players = {}
         self.code_state = {}
+        self.log = []
         self.round = 0
         self.next_player = ""
         self.name = ""
         self.open = False
+        self.current_bet = 0
+
+        self.evaluator = treys.Evaluator()
 
     def new_round(self):
-        self.round = 0
         self.card_state = {}
         self.code_state = {}
+
+        self.round = 0
+        self.current_bet = 0
         self.open = False
         for player_name in self.players:
             player_name.new_round()
@@ -39,8 +47,8 @@ class Poker:
         deck = Deck()
 
         self.card_state["board"] = deck.draw(5)
-        for player in self.players:
-            self.card_state[player] = deck.draw(2)
+        for player_obj in self.players:
+            self.card_state[player_obj] = deck.draw(2)
 
         key_dict = {}
         
@@ -152,10 +160,12 @@ class Poker:
         if next_is_next:
             self.next_player = self.players[player_list[-1][0]]
 
-    def request_card_codes(self, card_list):
-        print(card_list)
+    def request_card_codes(self, card_string):
+        print(card_string)
 
     def next_round(self):
+
+        self.log.append("next round")
 
         self.round += 1
 
@@ -171,7 +181,8 @@ class Poker:
                     self.request_card_codes("b3")
 
                 case 4:
-                    (self.request_card_codes("players"))
+                    self.request_card_codes("players")
+                    self.trigger_end()
 
     def card_permission(self, card_string, socket):
         match card_string:
@@ -184,8 +195,8 @@ class Poker:
             case _:
                 if self.round >= 4 or self.open:
                     return True
-                else:
-                    return card_string in self.players and self.players[card_string].is_my_socket(socket)
+                elif card_string in self.players and self.players[card_string].is_my_socket(socket):
+                    return self.players[card_string].status == PLAYING or self.players[card_string].status == ALL_IN
 
     def get_card_codes(self, card_string, socket):
 
@@ -218,14 +229,118 @@ class Poker:
                 case "b2":
                     self.card_state["board"].append(self.key_list_to_card(self.decode_key_lists(code_list[0], self.code_state["board"][4])))
 
+    def player_action(self, command_list):
+        player_obj = self.players(command_list[0])
+        action = command_list[1]
+        chips = None
+        if len(command_list) >= 3:
+            chips = command_list[2]
 
+        match action:
+            case "raise":
+                status = player_obj.poker_raise(chips, self.current_bet)
+                if status >= 0:
+                    self.current_bet += status
+            case "blinds":
+                status = player_obj.poker_blinde(chips)
+                if chips > self.current_bet:
+                    self.current_bet = chips
+            case "fold":
+                status = player_obj.poker_fold()
+            case "check":
+                status = player_obj.poker_check()
+            case "call":
+                status = player_obj.poker_call(self.current_bet)
+            case _:
+                status = ERROR_ACTION_NOT_FOUND
+
+        if self.active_players() == 1:
+            self.trigger_end()
+
+        if status >= 0:
+            self.log.append(" ".join(command_list + [str(status)]))
+            print(" ".join(command_list))
+
+        self.check_open()
+
+        return status
+
+    def check_open(self):
+
+        playing_num = 0
+        in_game_num = 0
+
+        for player_obj in self.players:
+            if player_obj.status == PLAYING:
+                playing_num += 1
+                in_game_num += 1
+                if playing_num >= 2:
+                    break
+
+            if player_obj.status == ALL_IN:
+                in_game_num += 1
+
+        if playing_num == 1 and in_game_num > 1:
+            self.open = True
+            self.request_card_codes("players")
+
+    def trigger_end(self):
+
+        values = {}
+
+        for player_name in self.card_state:
+            if player_name != "board":
+                values[player_name] = self.evaluator.evaluate(self.card_state[player_name], self.card_state["board"])
+
+
+
+        chips_left_in_pot = True
+
+        while chips_left_in_pot:
+            chips_left_in_pot = False
+
+            winner = max(values, key=values.get)
+            print(values)
+            del values[winner]
+            print(winner)
+
+            chips = self.players[winner].bet
+            print(chips)
+
+            winnings = 0
+
+            for player_name in self.players:
+                bet, bet_empty = self.players[player_name].get_winnings(chips)
+                print(player_name, bet)
+                winnings += bet
+                if not bet_empty:
+                    chips_left_in_pot = True
+
+            self.players[winner].chips += winnings
+
+
+    def active_players(self):
+        n = 0
+        for player_obj in self.players:
+            if player_obj.status == PLAYING or player_obj.status == ALL_IN:
+                n += 1
+
+        return n
 
 
 if __name__ == "__main__":
 
     poker = Poker()
 
+    poker.connect_to_players([["p1", "1"], ["p2", "2"], ["p3", "3"]])
+
     cd = poker.deal_cards()
 
-    Card.print_pretty_cards(poker.card_state["board"])
+    poker.players["p1"].bet = 500
+    poker.players["p2"].bet = 400
+    poker.players["p3"].bet = 200
 
+    for place in poker.card_state:
+        Card.print_pretty_cards(poker.card_state[place])
+
+    poker.trigger_end()
