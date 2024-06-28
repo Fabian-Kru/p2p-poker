@@ -80,6 +80,8 @@ class Poker:
 
         return code_dict
 
+        #TODO Fabian karten verteilen
+
 
     def generate_key_list(self, card_treys):
         """
@@ -161,6 +163,7 @@ class Poker:
 
     def request_card_codes(self, card_string):
         print(card_string)
+        #TODO Fabian request cards anyone
 
     def next_round(self):
 
@@ -211,6 +214,8 @@ class Poker:
                 case _:
                     return self.code_state[card_string]
 
+        #TODO Fabian send karten
+
     def receive_card_codes(self, card_string, code_list):
         if card_string in self.players:
             self.card_state[card_string] = []
@@ -229,6 +234,8 @@ class Poker:
                 case "b2":
                     self.card_state["board"].append(self.key_list_to_card(self.decode_key_lists(code_list[0], self.code_state["board"][4])))
 
+        #TODO Fabian Implement receiving cards
+    
     def player_action(self, command_list):
         player_obj = self.players(command_list[0])
         action = command_list[1]
@@ -264,6 +271,8 @@ class Poker:
         self.check_open()
 
         return status
+
+    #TODO Fabian aufrufen
 
     def check_open(self):
 
@@ -331,7 +340,8 @@ class Poker:
 if __name__ == "__main__":
 
     poker = Poker()
-
+    
+    
     poker.connect_to_players(["p1", "p2", "p3"])
 
     cd = poker.deal_cards()
