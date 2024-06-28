@@ -17,7 +17,7 @@ class Player:
 
         return self.name
 
-    def new_round(self)
+    def new_round(self):
         self.bet = 0
         if self.chips == 0:
             self.status = CHIPLESS
@@ -38,7 +38,7 @@ class Player:
         self.bet = 0
         self.status = PLAYING
 
-    def poker_raise(self, chips):
+    def poker_raise(self, chips, current_bet):
         """
         Changes the player attributes for as if they raised during play.
         :param chips: Amount of chips raised
@@ -50,6 +50,8 @@ class Player:
 
         if chips > self.chips:
             return ERROR_NOT_ENOUGH_CHIPS
+
+        chips += current_bet - self.bet
 
         self.chips -= chips
         self.bet += chips
@@ -77,6 +79,11 @@ class Player:
         self.chips -= chips
         self.bet += chips
 
+        if self.chips == 0:
+            self.status = ALL_IN
+
+        return chips
+
     def poker_fold(self):
         """
         Player change for folding
@@ -89,6 +96,51 @@ class Player:
         self.status = FOLDED
 
         return 0
+
+    def poker_check(self):
+        return 0
+
+    def poker_call(self, current_bet):
+
+        if self.status != PLAYING:
+            return ERROR_NOT_PLAYING
+
+        chips = current_bet - self.bet
+
+        self.chips -= chips
+        self.bet += chips
+
+        if self.chips == 0:
+            self.status = ALL_IN
+
+        return chips
+
+    def available_actions(self, current_bet):
+        action_list = []
+
+        if self.status == PLAYING:
+            if current_bet - self.bet < self.chips:
+                action_list.append("raise")
+
+            if self.bet == current_bet:
+                action_list.append("check")
+
+            elif self.bet < current_bet:
+                action_list += ["fold", "call"]
+
+        return action_list
+
+    def get_winnings(self, chips):
+
+        if self.bet <= chips:
+            temp = self.bet
+            self.bet = 0
+            return temp, True
+
+        else:
+            self.bet -= chips
+            return chips, False
+
 
     #TODO Implement connect to other players
     def connect_to_player(self, address):
