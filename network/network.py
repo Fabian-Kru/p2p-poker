@@ -25,6 +25,10 @@ class P2PNode:
         self.clients.append(c)
         asyncio.ensure_future(c.send_some_data())
 
+    async def send_to_client(self, client_name: str, message: str) -> None:
+        # TODO Implement
+        pass
+
     async def broadcast_message_with_ttl(self, message: str, ttl: int) -> None:
         for i, client in enumerate(self.clients):
             if i < ttl:
