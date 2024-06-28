@@ -6,6 +6,7 @@ from data.AnnouncePeerMessage import AnnouncePeerMessage
 from data.ClientMetaData import ClientMetaData
 from data.game.GameJoinMessage import GameJoinMessage
 from data.game.GameSearchMessage import GameSearchMessage
+from data.game.GameUpdateMessage import GameUpdateMessage
 
 
 class P2PClient:
@@ -34,12 +35,18 @@ class P2PClient:
                             self.node.connect_to_node("127.0.0.1", newPeers[1])
                     elif isinstance(data, GameSearchMessage):
                         print("[client] >GameSearchMessage received", data)
-                        client_socket.send(pickle.dumps(GameJoinMessage("Joining game", "Player-1")))
-                        # update ttl and forward to ttl clients
-                        updated_message = GameSearchMessage(data.ttl - 1, self.uid)
-                        if updated_message.ttl > 0:  # only forward if ttl > 0
-                            await self.node.broadcast_message_with_ttl(updated_message)
 
+                        # todo decide to join game or not
+                        self.node.game_master.add_game(data.game)
+                        client_socket.send(pickle.dumps(GameJoinMessage(data.game, "Player-1")))
+
+                        # update ttl and forward to ttl clients
+                        updated_message = GameSearchMessage(data.ttl - 1, self.uid, data.game)
+                        if updated_message.ttl > 0:  # only forward if ttl > 0
+                            await self.node.broadcast_message_with_ttl(updated_message, updated_message.ttl)
+                    elif isinstance(data, GameUpdateMessage):
+                        # todo update game state
+                        print("[client] >GameUpdateMessage received", data)
                     else:
                         print("[client] Received unknown: ", data)
                 else:

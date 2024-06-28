@@ -6,6 +6,8 @@ from aioconsole import ainput
 
 from client import P2PClient
 from data.game.GameSearchMessage import GameSearchMessage
+from game.game import Game
+from game.gamemanager import GameMaster
 from server import P2PServer
 
 
@@ -16,6 +18,7 @@ class P2PNode:
         self.clients = []
         self.bp = port
         self.sp = _server_port
+        self.game_master = GameMaster()  # shared between client and server to avoid sync problems
 
     def connect_to_node(self, ip, port):
         c = P2PClient(self, port, "client-" + str(self.sp))
@@ -43,13 +46,19 @@ class P2PNode:
         if command == "search_game":
             print("[server] Searching for game")
             # Send to all connected clients -> ttl of 1-2
-            await self.server.broadcast_message(GameSearchMessage(ttl=2))
+            game = Game("Game-1")
+            self.game_master.add_game(game)
+            await self.server.broadcast_message(GameSearchMessage(ttl=2, sender=None, game=game))
             return
 
         if command == "list":
             print("[server] server:", self.server.uid, "[client] client: client-" + str(self.sp))
             print("[server] clients:", [c.uid for c in self.clients])
             print("[client] clients", [v.name for k, v in self.server.clients.items()])
+            return
+
+        if command == "games":
+            self.game_master.print_game()
             return
 
 

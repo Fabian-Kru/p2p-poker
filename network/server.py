@@ -86,4 +86,3 @@ class P2PServer:
     async def broadcast_message(self, message):
         for client in self.connections:
             client.send(pickle.dumps(message))
-
