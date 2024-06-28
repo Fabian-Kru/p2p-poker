@@ -3,15 +3,12 @@ from enums import *
 
 class Player:
 
-    def __init__(self, name, address):
+    def __init__(self, name):
 
         self.name = name
         self.chips = 1000
         self.bet = 0
         self.status = PLAYING
-        self.socket = None
-        if address:
-            self.connect_to_player(address)
 
     def __str__(self):
 
