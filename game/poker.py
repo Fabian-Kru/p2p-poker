@@ -1,8 +1,7 @@
 import treys
-from treys import Card, Deck, Evaluator
+from treys import Card, Deck
 import math
 import random
-from pprint import pprint
 import player
 from enums import *
 
