@@ -1,14 +1,13 @@
 import asyncio
-import random
-import threading
-
-from aioconsole import ainput
 
 from client import P2PClient
 from data.game.GameSearchMessage import GameSearchMessage
 from game.game import Game
 from game.gamemanager import GameMaster
-from server import P2PServer
+from typing import TYPE_CHECKING
+
+if not TYPE_CHECKING:
+    from server import P2PServer
 
 
 class P2PNode:

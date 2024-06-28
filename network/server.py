@@ -1,11 +1,14 @@
-import socket, pickle, asyncio
-
-from aioconsole import ainput
+import asyncio
+import pickle
+import socket
+from typing import TYPE_CHECKING
 
 from data import Message
 from data.AnnouncePeerMessage import AnnouncePeerMessage
 from data.ClientMetaData import ClientMetaData
-from network.network import P2PNode
+
+if TYPE_CHECKING:
+    from network.network import P2PNode
 
 
 def filter_client(receiver, clients):
@@ -20,7 +23,7 @@ def filter_client(receiver, clients):
 
 class P2PServer:
 
-    def __init__(self, port: int, node: P2PNode) -> None:
+    def __init__(self, port: int, node: 'P2PNode') -> None:
         self.server = None
         self.clients = {}  # store known clients
         self.connections = []  # store connections
@@ -29,7 +32,7 @@ class P2PServer:
         self.port = port  # system will pick a random port, if port == 0
         self.node = node
 
-    async def start(self, node: P2PNode, bp: int) -> None:
+    async def start(self, node: 'P2PNode', bp: int) -> None:
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((self.host, self.port))
         self.node.sp = self.server.getsockname()[1]
