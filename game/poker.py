@@ -157,7 +157,7 @@ class Poker:
                 next_is_next = True
 
         if next_is_next:
-            self.next_player = self.players[player_list[-1][0]]
+            self.next_player = self.players[player_list[-1]]
 
     def request_card_codes(self, card_string):
         print(card_string)
