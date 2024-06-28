@@ -183,6 +183,7 @@ class Poker:
                     self.request_card_codes("players")
                     self.trigger_end()
 
+    #TODO remove socket
     def card_permission(self, card_string, socket):
         match card_string:
             case "b1":
@@ -233,7 +234,7 @@ class Poker:
         action = command_list[1]
         chips = None
         if len(command_list) >= 3:
-            chips = command_list[2]
+            chips = int(command_list[2])
 
         match action:
             case "raise":
@@ -331,7 +332,7 @@ if __name__ == "__main__":
 
     poker = Poker()
 
-    poker.connect_to_players([["p1", "1"], ["p2", "2"], ["p3", "3"]])
+    poker.connect_to_players(["p1", "p2", "p3"])
 
     cd = poker.deal_cards()
 
