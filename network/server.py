@@ -5,6 +5,7 @@ from aioconsole import ainput
 from data import Message
 from data.AnnouncePeerMessage import AnnouncePeerMessage
 from data.ClientMetaData import ClientMetaData
+from network.network import P2PNode
 
 
 def filter_client(receiver, clients):
@@ -19,7 +20,7 @@ def filter_client(receiver, clients):
 
 class P2PServer:
 
-    def __init__(self, port, node):
+    def __init__(self, port: int, node: P2PNode) -> None:
         self.server = None
         self.clients = {}  # store known clients
         self.connections = []  # store connections
@@ -28,7 +29,7 @@ class P2PServer:
         self.port = port  # system will pick a random port, if port == 0
         self.node = node
 
-    async def start(self, node, bp):
+    async def start(self, node: P2PNode, bp: int) -> None:
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((self.host, self.port))
         self.node.sp = self.server.getsockname()[1]
@@ -42,7 +43,7 @@ class P2PServer:
             client, _ = await asyncio.get_event_loop().sock_accept(self.server)
             asyncio.ensure_future(self.__handle_client(client))  # ensure_future -> run in background
 
-    async def __handle_client(self, client):
+    async def __handle_client(self, client: socket):
         """
         Handle client connection
         clients are incoming_connections stored in clients
@@ -52,7 +53,7 @@ class P2PServer:
         while request != 'quit':
             request = await asyncio.get_event_loop().sock_recv(client, 1024)
 
-            if not client in self.connections:
+            if client not in self.connections:
                 self.connections.append(client)
 
             if request == b'':  # client disconnected

@@ -1,6 +1,7 @@
 import asyncio
 import pickle
 import socket
+from typing import Coroutine, Any
 
 from data.AnnouncePeerMessage import AnnouncePeerMessage
 from data.ClientMetaData import ClientMetaData
@@ -11,7 +12,7 @@ from data.game.GameUpdateMessage import GameUpdateMessage
 
 class P2PClient:
 
-    def __init__(self, node, bootstrap_port, name):
+    def __init__(self, node, bootstrap_port, name) -> None:
         self.server = node.server
         self.node = node
         self.client = None
@@ -21,7 +22,7 @@ class P2PClient:
         self.clients = []
         print("[client] Started with uid:", self.uid, self.port)
 
-    async def receive_data(self, client_socket):
+    async def receive_data(self, client_socket) -> None:
         while True:
             try:
                 response = await asyncio.to_thread(client_socket.recv, 1024)
@@ -57,11 +58,11 @@ class P2PClient:
                 client_socket.close()
                 break
 
-    async def send_message(self, message):
+    async def send_message(self, message) -> None:
         print("[client] Sending message:", message)
         self.client.send(pickle.dumps(message))
 
-    async def send_some_data(self):
+    async def send_some_data(self) -> None:
         if self.port == -1:
             print("[client] Cannot connect to bootstrap server")
             return

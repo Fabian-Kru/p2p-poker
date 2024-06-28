@@ -13,35 +13,35 @@ from server import P2PServer
 
 class P2PNode:
 
-    def __init__(self, _server_port, port):
+    def __init__(self, _server_port: int, port: int) -> None:
         self.server = P2PServer(_server_port, self)
         self.clients = []
         self.bp = port
         self.sp = _server_port
         self.game_master = GameMaster()  # shared between client and server to avoid sync problems
 
-    def connect_to_node(self, ip, port):
+    def connect_to_node(self, ip: str, port: int) -> None:
         c = P2PClient(self, port, "client-" + str(self.sp))
         print(f"[server] Connecting to {ip}:{port} with new client")
         self.clients.append(c)
         asyncio.ensure_future(c.send_some_data())
 
-    async def broadcast_message_with_ttl(self, message, ttl):
+    async def broadcast_message_with_ttl(self, message: str, ttl: int) -> None:
         for i, client in enumerate(self.clients):
             if i < ttl:
                 asyncio.ensure_future(client.send_message(message))
 
-    async def broadcast_message(self, message):
+    async def broadcast_message(self, message: str) -> None:
         for c in self.clients:
             asyncio.ensure_future(c.send_message(message))
 
-    async def run(self):
+    async def run(self) -> None:
         if bootstrap_port == -1:
             await self.server.start(self, -1)
             return
         await asyncio.create_task(self.server.start(self, self.bp)),
 
-    async def process_input(self, command):
+    async def process_input(self, command: str) -> None:
 
         if command == "search_game":
             print("[server] Searching for game")
@@ -62,7 +62,7 @@ class P2PNode:
             return
 
 
-async def input_handler(_network):
+async def input_handler(_network) -> None:
     while True:
         command = await asyncio.get_event_loop().run_in_executor(None, input, "> ")
         await _network.process_input(command)
