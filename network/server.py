@@ -2,7 +2,7 @@ import asyncio
 import pickle
 import socket
 from typing import TYPE_CHECKING
-
+from util.logging import log
 from data import Message
 from data.AnnouncePeerMessage import AnnouncePeerMessage
 from data.ClientMetaData import ClientMetaData
@@ -39,7 +39,7 @@ class P2PServer:
         self.port = self.server.getsockname()[1]
         self.server.listen()
         self.server.setblocking(False)
-        print("[server] Started on port:", self.server.getsockname()[1])
+        log("[server] Started on port:", self.server.getsockname()[1])
         if bp != -1:
             node.connect_to_node("127.0.0.1", bp)
         while True:
@@ -60,7 +60,7 @@ class P2PServer:
                 self.connections.append(client)
 
             if request == b'':  # client disconnected
-                print(f"[server] {self.clients[client.getpeername()].name} disconnected!")
+                log(f"[server] {self.clients[client.getpeername()].name} disconnected!")
                 del self.clients[client.getpeername()]
                 self.connections.remove(client)
                 break
@@ -70,23 +70,29 @@ class P2PServer:
                 a = AnnouncePeerMessage([(k[0], self.clients[k].port) for k, v in self.clients.items()], True)
                 if a.known_connections:
                     for k, v in self.clients.items():
-                        print(f"{k}: {v} ")
+                        log(f"{k}: {v} ")
                         r = next((e for e in self.connections if e.getpeername() == client.getpeername()))
                         r.send(pickle.dumps(a))
-                        print(f"[server] Sending to {o.port}>{r.getpeername()}: {a}")
+                        log(f"[server] Sending to {o.port}>{r.getpeername()}: {a}")
 
-                print(f"[server] New client detected {client.getpeername()} as {o.name} at port {o.port}")
+                log(f"[server] New client detected {client.getpeername()} as {o.name} at port {o.port}")
                 self.clients[client.getpeername()] = o
             elif isinstance(o, Message.Message):
-                print(f"[server] Message: {o.message}")
+                log(f"[server] Message: {o.message}")
             elif isinstance(o, AnnouncePeerMessage):
-                print(f"[server] Received: Announced ----> {o}")
+                log(f"[server] Received: Announced ----> {o}")
 
             else:
-                print(f"[server] Unknown object received {o}")
+                log(f"[server] Unknown object received {o}")
             # TODO handle request, store client information, etc.
         client.close()
 
-    async def broadcast_message(self, message):
+    async def send_to_client(self, client_name, message) -> None:
+        for client in self.connections:
+            if self.clients[client.getpeername()].name == client_name:
+                client.send(pickle.dumps(message))
+                break
+
+    async def broadcast_message(self, message) -> None:
         for client in self.connections:
             client.send(pickle.dumps(message))

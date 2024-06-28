@@ -8,6 +8,7 @@ from data.ClientMetaData import ClientMetaData
 from data.game.GameJoinMessage import GameJoinMessage
 from data.game.GameSearchMessage import GameSearchMessage
 from data.game.GameUpdateMessage import GameUpdateMessage
+from util.logging import log
 
 
 class P2PClient:
@@ -17,10 +18,11 @@ class P2PClient:
         self.node = node
         self.client = None
         self.uid = name
+        self.name = "client-" + str(self.server.port)
         self.host = "127.0.0.1"
         self.port = bootstrap_port
         self.clients = []
-        print("[client] Started with uid:", self.uid, self.port)
+        log(f"[client] Started {self.name}. Connecting to 127.0.0.1:{self.port}")
 
     async def receive_data(self, client_socket) -> None:
         while True:
@@ -30,12 +32,12 @@ class P2PClient:
                     data = pickle.loads(response)
 
                     if isinstance(data, AnnouncePeerMessage):
-                        print("[client] >Announce message received", data.known_connections, self.server.connections)
+                        log("[client] >Announce message received", data.known_connections, self.server.connections)
                         for newPeers in data.known_connections:
-                            print("[client] Connecting to new peer", newPeers[1])
+                            log("[client] Connecting to new peer", newPeers[1])
                             self.node.connect_to_node("127.0.0.1", newPeers[1])
                     elif isinstance(data, GameSearchMessage):
-                        print("[client] >GameSearchMessage received", data)
+                        log("[client] >GameSearchMessage received", data)
 
                         # todo decide to join game or not
                         self.node.game_master.add_game(data.game)
@@ -47,24 +49,24 @@ class P2PClient:
                             await self.node.broadcast_message_with_ttl(updated_message, updated_message.ttl)
                     elif isinstance(data, GameUpdateMessage):
                         # todo update game state
-                        print("[client] >GameUpdateMessage received", data)
+                        log("[client] >GameUpdateMessage received", data)
                     else:
-                        print("[client] Received unknown: ", data)
+                        log("[client] Received unknown: ", data)
                 else:
                     client_socket.close()
                     break
             except Exception as e:
-                print(e)
+                log(e)
                 client_socket.close()
                 break
 
     async def send_message(self, message) -> None:
-        print("[client] Sending message:", message)
+        log("[client] Sending message:", message)
         self.client.send(pickle.dumps(message))
 
     async def send_some_data(self) -> None:
         if self.port == -1:
-            print("[client] Cannot connect to bootstrap server")
+            log("[client] Cannot connect to bootstrap server")
             return
         client_socket = socket.socket()
         client_socket.connect((self.host, self.port))

@@ -1,6 +1,7 @@
 from typing import Type
 
 from game.game import Game
+from util.logging import log
 
 
 class GameMaster:
@@ -9,11 +10,11 @@ class GameMaster:
         self.games = []
 
     def add_game(self, game: Game) -> None:
-        print("[game] Game added with id:", game.game_id)
+        log("[game] Game added with id:", game.game_id)
         self.games.append(game)
 
     def print_game(self) -> None:
-        print("[game] Games:")
+        log("[game] Games:")
         for game in self.games:
-            print(game)
+            log(game)
 
