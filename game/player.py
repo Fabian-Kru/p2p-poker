@@ -45,10 +45,10 @@ class Player:
         if self.status != PLAYING:
             return ERROR_NOT_PLAYING
 
+        chips += current_bet - self.bet
+        
         if chips > self.chips:
             return ERROR_NOT_ENOUGH_CHIPS
-
-        chips += current_bet - self.bet
 
         self.chips -= chips
         self.bet += chips
