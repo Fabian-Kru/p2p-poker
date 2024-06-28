@@ -147,13 +147,13 @@ class Poker:
         next_is_next = False
 
         for player_tuple in player_list:
-            if player_tuple[0] == self.name:
-                self.players[player_tuple[0]] = player.Player(player_tuple[0], player_tuple[1])
+            if player_tuple != self.name:
+                self.players[player_tuple] = player.Player(player_tuple)
                 if next:
-                    self.next_player = self.players[player_tuple[0]]
+                    self.next_player = self.players[player_tuple]
                     next_is_next = False
             else:
-                self.players[player_tuple[0]] = player.Player(player_tuple[0], "")
+                self.players[player_tuple] = player.Player(player_tuple)
                 next_is_next = True
 
         if next_is_next:
