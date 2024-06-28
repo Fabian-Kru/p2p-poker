@@ -13,10 +13,21 @@ class Poker:
 
     def __init__(self):
 
-        self.table_state = {}
-        self.players = {}
         self.card_state = {}
+        self.players = {}
+        self.code_state = {}
         self.round = 0
+        self.next_player = ""
+        self.name = ""
+        self.open = False
+
+    def new_round(self):
+        self.round = 0
+        self.card_state = {}
+        self.code_state = {}
+        self.open = False
+        for player_name in self.players:
+            player_name.new_round()
 
     def deal_cards(self):
         """
@@ -24,39 +35,39 @@ class Poker:
         :return: the generated dictionary
         """
 
-        self.table_state = {}
+        self.card_state = {}
         deck = Deck()
 
-        self.table_state["board"] = deck.draw(5)
+        self.card_state["board"] = deck.draw(5)
         for player in self.players:
-            self.table_state[player] = deck.draw(2)
+            self.card_state[player] = deck.draw(2)
 
         key_dict = {}
         
-        for place in self.table_state:
+        for place in self.card_state:
             
             key_dict[place] = []
             
-            for card_treys in self.table_state[place]:
+            for card_treys in self.card_state[place]:
                 
                 key_dict[place].append(self.generate_key_list(card_treys))
 
         n = 0
         code_dict = {}
 
-        for player in players:
+        for player_name in self.players:
 
-            code_dict[player] = {}
+            code_dict[player_name] = {}
 
             for place in key_dict:
 
-                code_dict[player][place] = []
+                code_dict[player_name][place] = []
 
                 for key_list in key_dict[place]:
 
                     temp_list = key_list.copy()
                     temp_list[n] = 52
-                    code_dict[player][place].append(temp_list)
+                    code_dict[player_name][place].append(temp_list)
 
             n += 1
 
@@ -124,6 +135,91 @@ class Poker:
 
         return Card.new(ranks[card_int % 13] + suits[card_int // 13])
 
+    def connect_to_players(self, player_list):
+
+        next_is_next = False
+
+        for player_tuple in player_list:
+            if player_tuple[0] == self.name:
+                self.players[player_tuple[0]] = player.Player(player_tuple[0], player_tuple[1])
+                if next:
+                    self.next_player = self.players[player_tuple[0]]
+                    next_is_next = False
+            else:
+                self.players[player_tuple[0]] = player.Player(player_tuple[0], "")
+                next_is_next = True
+
+        if next_is_next:
+            self.next_player = self.players[player_list[-1][0]]
+
+    def request_card_codes(self, card_list):
+        print(card_list)
+
+    def next_round(self):
+
+        self.round += 1
+
+        if not self.open:
+            match self.round:
+                case 1:
+                    self.request_card_codes("b1")
+
+                case 2:
+                    self.request_card_codes("b2")
+
+                case 3:
+                    self.request_card_codes("b3")
+
+                case 4:
+                    (self.request_card_codes("players"))
+
+    def card_permission(self, card_string, socket):
+        match card_string:
+            case "b1":
+                return self.round >= 1
+            case "b2":
+                return self.round >= 2
+            case "b3":
+                return self.round >= 3
+            case _:
+                if self.round >= 4 or self.open:
+                    return True
+                else:
+                    return card_string in self.players and self.players[card_string].is_my_socket(socket)
+
+    def get_card_codes(self, card_string, socket):
+
+        if self.card_permission(card_string, socket):
+            match card_string:
+                case "b1":
+                    return self.code_state["board"][0:2]
+                case "b2":
+                    return [self.code_state["board"][3]]
+                case "b2":
+                    return [self.code_state["board"][4]]
+                case _:
+                    return self.code_state[card_string]
+
+    def receive_card_codes(self, card_string, code_list):
+        if card_string in self.players:
+            self.card_state[card_string] = []
+
+            for card in zip(code_list, self.code_state[card_string]):
+                self.card_state[card_string].append(self.key_list_to_card(self.decode_key_lists(card[0], card[1])))
+
+        else:
+            match card_string:
+                case "b1":
+                    self.card_state["board"] = []
+                    for i in range(3):
+                        self.card_state["board"].append(self.key_list_to_card(self.decode_key_lists(code_list[i], self.code_state["board"][i])))
+                case "b2":
+                    self.card_state["board"].append(self.key_list_to_card(self.decode_key_lists(code_list[0], self.code_state["board"][3])))
+                case "b2":
+                    self.card_state["board"].append(self.key_list_to_card(self.decode_key_lists(code_list[0], self.code_state["board"][4])))
+
+
+
 
 if __name__ == "__main__":
 
@@ -131,14 +227,5 @@ if __name__ == "__main__":
 
     cd = poker.deal_cards()
 
-    Card.print_pretty_cards(poker.table_state["board"])
+    Card.print_pretty_cards(poker.card_state["board"])
 
-    board_list = []
-
-    for i in range(5):
-        card = poker.key_list_to_card(poker.decode_key_lists(cd["p1"]["board"][i], cd["p2"]["board"][i]))
-        board_list.append(card)
-
-    Card.print_pretty_cards(board_list)
-
-    pprint(cd)

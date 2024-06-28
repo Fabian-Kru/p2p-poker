@@ -3,17 +3,30 @@ from enums import *
 
 class Player:
 
-    def __init__(self, name, socket):
+    def __init__(self, name, address):
 
         self.name = name
         self.chips = 1000
         self.bet = 0
         self.status = PLAYING
-        self.socket = socket
+        self.socket = None
+        if address:
+            self.connect_to_player(address)
 
     def __str__(self):
 
         return self.name
+
+    def new_round(self)
+        self.bet = 0
+        if self.chips == 0:
+            self.status = CHIPLESS
+
+        if not self.status == CHIPLESS:
+            self.status = PLAYING
+
+    def set_dealer(self):
+        self.status = DEALER
 
     def new_game(self):
         """
@@ -76,3 +89,10 @@ class Player:
         self.status = FOLDED
 
         return 0
+
+    #TODO Implement connect to other players
+    def connect_to_player(self, address):
+        self.socket = address
+
+    def is_my_socket(self, socket):
+        return socket == self.socket
