@@ -48,7 +48,10 @@ class P2PClient:
                         if updated_message.ttl > 0:  # only forward if ttl > 0
                             await self.node.broadcast_message_with_ttl(updated_message, updated_message.ttl)
                     elif isinstance(data, GameUpdateMessage):
-                        # todo update game state
+                        game = self.node.game_master.get_or_add_game(data.game)
+                        game.update(data)
+                    elif isinstance(data, GameJoinMessage):
+                        game = self.node.game_master.get_or_add_game(data.game)
                         log("[client] >GameUpdateMessage received", data)
                     else:
                         log("[client] Received unknown: ", data)

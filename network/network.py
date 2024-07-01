@@ -4,11 +4,12 @@ import pickle
 from client import P2PClient
 from data.Message import Message
 from data.game.GameSearchMessage import GameSearchMessage
+from data.game.GameUpdateMessage import GameUpdateMessage
 from game.game import Game
 from game.gamemanager import GameMaster
-from typing import TYPE_CHECKING, List
 
 from util.logging import log
+from typing import TYPE_CHECKING, List
 
 if not TYPE_CHECKING:
     from server import P2PServer
@@ -65,9 +66,16 @@ class P2PNode:
         if command == "search_game":
             log("[server] Searching for game")
             # Send to all connected clients -> ttl of 1-2
-            game = Game("Game-1")
+            game = Game("Game-" + str(self.sp))
+            game.set_master("client-"+str(self.sp))
             self.game_master.add_game(game)
-            await self.server.broadcast_message(GameSearchMessage(ttl=2, sender=None, game=game))
+            await self.server.broadcast_message(GameSearchMessage(ttl=2, sender=None, game=game.get_client_object()))
+            return
+
+        if command == "test":
+            game_update = GameUpdateMessage(self.game_master.games[0], "test", "test123")
+            game_update.update_game_with_data()
+            await self.server.broadcast_message(game_update)  # todo dont broadcast, send only to clients related to game
             return
 
         if command == "list":
@@ -77,7 +85,7 @@ class P2PNode:
             return
 
         if command == "games":
-            self.game_master.log_game()
+            self.game_master.print_game()
             return
 
         if command.startswith("send"):
