@@ -22,6 +22,7 @@ class P2PNode:
         self.clients: List[P2PClient] = []
         self.bp = port
         self.sp = _server_port
+        self.name = "client-" + str(self.sp)
         self.game_master = GameMaster()  # shared between client and server to avoid sync problems
 
     def connect_to_node(self, ip: str, port: int) -> None:

@@ -2,6 +2,9 @@ import asyncio
 import pickle
 import socket
 from typing import TYPE_CHECKING
+
+from data.game.GameJoinMessage import GameJoinMessage
+from data.game.GameUpdateMessage import GameUpdateMessage
 from util.logging import log
 from data import Message
 from data.AnnouncePeerMessage import AnnouncePeerMessage
@@ -81,7 +84,19 @@ class P2PServer:
                 log(f"[server] Message: {o.message}")
             elif isinstance(o, AnnouncePeerMessage):
                 log(f"[server] Received: Announced ----> {o}")
-
+            elif isinstance(o, GameUpdateMessage):
+                print("[server] >GameUpdateMessage received", o)
+                game = self.node.game_master.get_or_add_game(o.game)
+                game.update(o)
+            elif isinstance(o, GameJoinMessage):
+                print("[server] >GameJoinMessage received", o)
+                game = self.node.game_master.get_or_add_game(o.game)
+                game.add_client(o.player)
+                update_data = GameUpdateMessage(game, "clients", game.clients)
+                game.update(update_data) # update local cache
+                # TODO gjm -> game_master -> game_update -> all_clients
+                for c in game.clients:
+                    await self.node.send_to_client(c, pickle.dumps(update_data))
             else:
                 log(f"[server] Unknown object received {o}")
             # TODO handle request, store client information, etc.
@@ -90,7 +105,10 @@ class P2PServer:
     async def send_to_client(self, client_name, message) -> None:
         for client in self.connections:
             if self.clients[client.getpeername()].name == client_name:
-                client.send(pickle.dumps(message))
+                if isinstance(message, (bytes, bytearray)):
+                    client.send(message)
+                else:
+                    client.send(pickle.dumps(message))
                 break
 
     async def broadcast_message(self, message) -> None:

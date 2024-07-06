@@ -41,8 +41,11 @@ class P2PClient:
 
                         # todo decide to join game or not
                         self.node.game_master.add_game(data.game)
-                        client_socket.send(pickle.dumps(GameJoinMessage(data.game, "Player-1")))
-
+                        game = self.node.game_master.get_or_add_game(data.game)
+                        game.add_client(self.name)
+                        client_socket.send(pickle.dumps(GameJoinMessage(data.game, self.name)))
+                        print("[client] >GameJoinMessage sent", data.game, self.name)
+                        # TODO gjm -> game_master -> game_update -> all_clients
                         # update ttl and forward to ttl clients
                         updated_message = GameSearchMessage(data.ttl - 1, self.uid, data.game)
                         if updated_message.ttl > 0:  # only forward if ttl > 0
@@ -50,9 +53,18 @@ class P2PClient:
                     elif isinstance(data, GameUpdateMessage):
                         game = self.node.game_master.get_or_add_game(data.game)
                         game.update(data)
+                        print("[client] >GameUpdateMessage received", data)
                     elif isinstance(data, GameJoinMessage):
+                        print("[client] >GameJoinMessage received", data)
                         game = self.node.game_master.get_or_add_game(data.game)
-                        log("[client] >GameUpdateMessage received", data)
+                        game.add_client(data.player)
+
+                        update_data = GameUpdateMessage(game, "clients", game.clients)
+                        # TODO gjm -> game_master -> game_update -> all_clients
+
+                        for c in game.clients:
+                            self.node.send_to_client(c, pickle.dumps(update_data))
+
                     else:
                         log("[client] Received unknown: ", data)
                 else:
