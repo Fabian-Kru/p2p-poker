@@ -1,10 +1,10 @@
 import asyncio
 import pickle
 import socket
-from typing import Coroutine, Any
 
 from data.AnnouncePeerMessage import AnnouncePeerMessage
 from data.ClientMetaData import ClientMetaData
+from data.ForwardMessage import ForwardMessage
 from data.game.GameJoinMessage import GameJoinMessage
 from data.game.GameSearchMessage import GameSearchMessage
 from data.game.GameUpdateMessage import GameUpdateMessage
@@ -21,7 +21,7 @@ class P2PClient:
         self.name = "client-" + str(self.server.port)
         self.host = "127.0.0.1"
         self.port = bootstrap_port
-        self.clients = []
+        self.clients = {}
         log(f"[client] Started {self.name}. Connecting to 127.0.0.1:{self.port}")
 
     async def receive_data(self, client_socket) -> None:
@@ -31,20 +31,23 @@ class P2PClient:
                 if response:
                     data = pickle.loads(response)
 
-                    if isinstance(data, AnnouncePeerMessage):
+                    if isinstance(data, ClientMetaData):
+                        self.node.server.clients[client_socket.getpeername()] = data
+                        self.clients[client_socket.getpeername()] = data
+
+                    elif isinstance(data, AnnouncePeerMessage):
                         log("[client] >Announce message received", data.known_connections, self.server.connections)
                         for newPeers in data.known_connections:
-                            log("[client] Connecting to new peer", newPeers[1])
-                            self.node.connect_to_node("127.0.0.1", newPeers[1])
+                            if self.node.connect_to_node("127.0.0.1", newPeers[1]):
+                                log("[client] Connecting to new peer", newPeers[1])
                     elif isinstance(data, GameSearchMessage):
                         log("[client] >GameSearchMessage received", data)
-
                         # todo decide to join game or not
                         self.node.game_master.add_game(data.game)
                         game = self.node.game_master.get_or_add_game(data.game)
                         game.add_client(self.name)
                         client_socket.send(pickle.dumps(GameJoinMessage(data.game, self.name)))
-                        print("[client] >GameJoinMessage sent", data.game, self.name)
+                        log("[client] >GameJoinMessage sent", data.game, self.name)
                         # TODO gjm -> game_master -> game_update -> all_clients
                         # update ttl and forward to ttl clients
                         updated_message = GameSearchMessage(data.ttl - 1, self.uid, data.game)
@@ -53,9 +56,9 @@ class P2PClient:
                     elif isinstance(data, GameUpdateMessage):
                         game = self.node.game_master.get_or_add_game(data.game)
                         game.update(data)
-                        print("[client] >GameUpdateMessage received", data)
+                        log("[client] >GameUpdateMessage received", data)
                     elif isinstance(data, GameJoinMessage):
-                        print("[client] >GameJoinMessage received", data)
+                        log("[client] >GameJoinMessage received", data)
                         game = self.node.game_master.get_or_add_game(data.game)
                         game.add_client(data.player)
 
@@ -64,6 +67,15 @@ class P2PClient:
 
                         for c in game.clients:
                             self.node.send_to_client(c, pickle.dumps(update_data))
+                    elif isinstance(data, ForwardMessage):
+                        log("[client] >ForwardMessage received", data.message)
+                        if data.receiver == self.node.name:
+                            log("[client] >ForwardMessage received", data.message)
+                        elif self.node.knows_client(data.receiver):
+                            log("[client] >ForwardMessage forwarding", data.message)
+                            await self.node.send_to_client(data.receiver, data.message)
+                        else:
+                            log("[client] >ForwardMessage unknown receiver", data.receiver)
 
                     else:
                         log("[client] Received unknown: ", data)
@@ -74,6 +86,9 @@ class P2PClient:
                 log(e)
                 client_socket.close()
                 break
+
+    def knows_client(self, client_name: str) -> bool:
+        return client_name in [self.clients[x].name for x in self.clients]
 
     async def send_message(self, message) -> None:
         log("[client] Sending message:", message)

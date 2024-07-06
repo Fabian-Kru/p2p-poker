@@ -2,6 +2,7 @@ import asyncio
 import pickle
 
 from client import P2PClient
+from data.ForwardMessage import ForwardMessage
 from data.Message import Message
 from data.game.GameSearchMessage import GameSearchMessage
 from data.game.GameUpdateMessage import GameUpdateMessage
@@ -25,27 +26,40 @@ class P2PNode:
         self.name = "client-" + str(self.sp)
         self.game_master = GameMaster()  # shared between client and server to avoid sync problems
 
-    def connect_to_node(self, ip: str, port: int) -> None:
+    def has_connection(self, client_name: [str, None], port: int) -> bool:
+        for c in self.clients:
+            if c.uid == client_name or c.port == port:
+                return True
+        return False
+
+    def connect_to_node(self, ip: str, port: int) -> bool:
+        if self.has_connection(None, port):
+            return False
         c = P2PClient(self, port, "client-" + str(self.sp))
         self.clients.append(c)
         asyncio.ensure_future(c.send_some_data())
+        return True
 
     def get_client_by_name(self, name: str) -> [P2PClient, None]:
         for c in self.clients:
-            if c.uid == name:
-                log("Found client-1", c)
+            if c.knows_client(name):
                 return c
         return None
 
+    def knows_client(self, receiver: str) -> bool:
+        return self.server.known_client(receiver) or (True in [x.knows_client(receiver) for x in self.clients])
+
     async def send_to_client(self, client_name: str, message: bytes) -> None:
+        # check if client knows client
         client = self.get_client_by_name(client_name)
 
         if client is not None:
             asyncio.ensure_future(client.send_message(message))
+            return
 
-        for k, v in self.server.clients.items():
-            if v.name == client_name:
-                asyncio.ensure_future(self.server.send_to_client(v.name, message))
+        if self.server.known_client(client_name):
+            asyncio.ensure_future(self.server.send_to_client(client_name, message))
+            return
 
     async def broadcast_message_with_ttl(self, message: str, ttl: int) -> None:
         for i, client in enumerate(self.clients):
@@ -68,7 +82,7 @@ class P2PNode:
             log("[server] Searching for game")
             # Send to all connected clients -> ttl of 1-2
             game = Game("Game-" + str(self.sp))
-            game.set_master("client-"+str(self.sp))
+            game.set_master("client-" + str(self.sp))
             self.game_master.add_game(game)
             await self.server.broadcast_message(GameSearchMessage(ttl=2, sender=None, game=game.get_client_object()))
             return
@@ -76,7 +90,18 @@ class P2PNode:
         if command == "test":
             game_update = GameUpdateMessage(self.game_master.games[0], "test", "test123")
             game_update.update_game_with_data()
-            await self.server.broadcast_message(game_update)  # todo dont broadcast, send only to clients related to game
+            await self.server.broadcast_message(
+                game_update)  # todo dont broadcast, send only to clients related to game
+            return
+
+        if command == "test3":
+            self.connect_to_node("127.0.0.1", 5454)
+            return
+
+        if command == "test2":
+            fm = ForwardMessage(self.name, "client-5454", Message("message"), ttl=3)
+            print(fm)
+            await self.server.broadcast_message(fm)
             return
 
         if command == "list":
@@ -100,6 +125,7 @@ class P2PNode:
             return
 
 
+
 async def input_handler(_network) -> None:
     while True:
         command = await asyncio.get_event_loop().run_in_executor(None, input, "> ")
@@ -113,6 +139,9 @@ if __name__ == "__main__":
         bootstrap_port = -1
     else:
         bootstrap_port = 1234
+
+    if server_port == 5454:
+        bootstrap_port = -1
 
     network = P2PNode(server_port, bootstrap_port)
     loop = asyncio.new_event_loop()

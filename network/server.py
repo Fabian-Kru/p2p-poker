@@ -3,6 +3,7 @@ import pickle
 import socket
 from typing import TYPE_CHECKING
 
+from data.ForwardMessage import ForwardMessage
 from data.game.GameJoinMessage import GameJoinMessage
 from data.game.GameUpdateMessage import GameUpdateMessage
 from util.logging import log
@@ -61,6 +62,7 @@ class P2PServer:
 
             if client not in self.connections:
                 self.connections.append(client)
+                client.send(pickle.dumps(ClientMetaData(self.node.name, self.port)))
 
             if request == b'':  # client disconnected
                 log(f"[server] {self.clients[client.getpeername()].name} disconnected!")
@@ -85,11 +87,11 @@ class P2PServer:
             elif isinstance(o, AnnouncePeerMessage):
                 log(f"[server] Received: Announced ----> {o}")
             elif isinstance(o, GameUpdateMessage):
-                print("[server] >GameUpdateMessage received", o)
+                log("[server] >GameUpdateMessage received", o)
                 game = self.node.game_master.get_or_add_game(o.game)
                 game.update(o)
             elif isinstance(o, GameJoinMessage):
-                print("[server] >GameJoinMessage received", o)
+                log("[server] >GameJoinMessage received", o)
                 game = self.node.game_master.get_or_add_game(o.game)
                 game.add_client(o.player)
                 update_data = GameUpdateMessage(game, "clients", game.clients)
@@ -97,10 +99,18 @@ class P2PServer:
                 # TODO gjm -> game_master -> game_update -> all_clients
                 for c in game.clients:
                     await self.node.send_to_client(c, pickle.dumps(update_data))
+            elif isinstance(o, ForwardMessage):
+                log("[server] >ForwardMessage received", o.message)
+                if self.node.knows_client(o.receiver):
+                    await self.node.send_to_client(o.receiver, o.message)
+
             else:
                 log(f"[server] Unknown object received {o}")
             # TODO handle request, store client information, etc.
         client.close()
+
+    def known_client(self, client_name: str) -> bool:
+        return client_name in [self.clients[x].name for x in self.clients]
 
     async def send_to_client(self, client_name, message) -> None:
         for client in self.connections:
@@ -113,4 +123,5 @@ class P2PServer:
 
     async def broadcast_message(self, message) -> None:
         for client in self.connections:
+            print("[server] Sending to", self.clients[client.getpeername()].name)
             client.send(pickle.dumps(message))

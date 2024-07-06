@@ -1,7 +1,8 @@
 class ClientMetaData:
     name = None
+    port = None
 
-    def __init__(self, name, port) -> None:
+    def __init__(self, name: str, port: int) -> None:
         self.name = name
         self.port = port
         pass
