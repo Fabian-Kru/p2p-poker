@@ -127,7 +127,7 @@ def draw_game(open_cards: [], your_cards: [], chips: int = 0, your_draw: bool = 
                     "Your cards",
                     Container(yc)
                 ),
-                "Your Chips: " + chips,
+                "Your Chips: " + str(chips),
                 "",
                 Container(
                     "Actions:",
