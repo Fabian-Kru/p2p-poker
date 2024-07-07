@@ -2,6 +2,11 @@ import pytermgui as ptg
 
 CONFIG = """
 config:
+    InputField:
+        styles:
+            fill: '[@236]{item}'
+            value: '[72]{item}'
+
     Label:
         styles:
             value: dim bold

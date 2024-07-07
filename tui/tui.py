@@ -1,5 +1,7 @@
 import pytermgui as ptg
-from pytermgui import Container, Label, Splitter, Button, Checkbox, Window
+from pytermgui import Container, Label, SizePolicy, Splitter, Button, Checkbox, Window, InputField
+
+from game.player import Player
 
 
 def open_main():
@@ -14,6 +16,7 @@ def open_main():
                         ["Find Games", lambda *_: find_games()],
                         ["Help", lambda *_: open_help()],
                         ["Exit", lambda *_: exit(0)],
+                    ["bla", lambda *_: draw_game(["open1, open2"], ["yours1", "yours2"], 100, 10, 1000)]
                 ),
                 width=100,
                 box="DOUBLE",
@@ -106,7 +109,7 @@ def create_game(players):
         manager.add(window)
 
 
-def draw_game(open_cards: [], your_cards: [], chips: int = 0, your_draw: bool = True,
+def draw_game(open_cards: [], your_cards: [], chips: int = 0, bet: int = 0, all_bet: int = 0, your_draw: bool = True,
               raise_chips: bool = True, check: bool = True, fold: bool = True, call: bool = True):
     oc = " - "
     for card in open_cards:
@@ -115,28 +118,44 @@ def draw_game(open_cards: [], your_cards: [], chips: int = 0, your_draw: bool = 
     for card in your_cards:
         yc += card + " - "
 
+    # ToDo: get playerlist and their data
+    players = [Player("test1"), Player("test2")]
+    player_list = []
+    for player in players:
+        player_list.append(Splitter(player.name, str(player.bet), "N/A"))
+
     with ptg.WindowManager() as manager:
         window = (
             Window(
                 "It's your turn!" if your_draw else "Waiting for opponent...",
-                Container(
-                    "Open Cards:",
-                    Container(oc)
+                Splitter(
+                    Container(
+                        "[210 bold]Player | Dealer | Status",
+                        *player_list
+                    ),
+                    Container(
+                        Container(
+                        "Open Cards:",
+                            Container(oc)
+                        ),
+                        Container(
+                            "Your cards",
+                            Container(yc)
+                        ),
+                        "Your Chips: " + str(chips),
+                        "Your Bet: " + str(bet),
+                        "Everyones Bet: " + str(all_bet)
+                    )
                 ),
-                Container(
-                    "Your cards",
-                    Container(yc)
-                ),
-                "Your Chips: " + str(chips),
                 "",
                 Container(
                     "Actions:",
-                    ["Bet", lambda *_: bet(your_cards)] if raise_chips else "(Bet not available)",
+                    ["Bet", lambda *_: draw_bet(chips, bet)] if raise_chips else "(Bet not available)",
                     ["Check", lambda *_: print("Todo")] if check else "(check not available)",
                     ["Fold", lambda *_: print("Todo")] if fold else "(fold not available)",
                     ["Call", lambda *_: print("Todo")] if call else "(call not available)",
                 ) if your_draw else "",
-                width=60,
+                width=128,
                 box="SINGLE",
             )
             .set_title("[210 bold]InGame")
@@ -146,8 +165,32 @@ def draw_game(open_cards: [], your_cards: [], chips: int = 0, your_draw: bool = 
         manager.add(window)
 
 
-def bet(your_credits: int = 0):
-    pass
+def draw_bet(your_credits: int = 0, your_bet: int = 0):
+    field = InputField()
+    field.bind(ptg.keys.RETURN, lambda field, _: print(field.value))
+
+    with ptg.WindowManager() as manager:
+        window = (
+            Window(
+                "",
+                Container(
+                    "Your Credits: " + str(your_credits),
+                    "Your Bet: " + str(your_bet),
+                    "",
+                    Splitter(
+                        "Add Bet",
+                        field
+                    )
+                ),
+                "",
+                width=60,
+                box="SINGLE",
+            )
+            .set_title("[210 bold]InGame")
+            .center()
+        )
+
+        manager.add(window)
 
 
 def draw_end(win: bool):
