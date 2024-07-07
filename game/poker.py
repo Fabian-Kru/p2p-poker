@@ -9,6 +9,75 @@ ranks = {0: "2", 1: "3", 2: "4", 3: "5", 4: "6", 5: "7", 6: "8", 7: "9", 8: "T",
 suits = {0: "s", 1: "h", 2: "d", 3: "c"}
 
 
+def card_treys_to_int(card_treys):
+    """
+    Turns an integer representation from the treys library into a 0 to 51 integer.
+    :param card_treys:
+    :return: 0-51 integer representation of card
+    """
+
+    return int(Card.get_rank_int(card_treys) + 13 * math.log(Card.get_suit_int(card_treys), 2))
+
+
+def int_to_trey_card(card_int):
+    """
+    Turns an 0-51 integer representation into a card from the treys library
+    :param card_int:
+    :return: A card from the treys library
+    """
+
+    return Card.new(ranks[card_int % 13] + suits[card_int // 13])
+
+
+def key_list_to_card(key_list):
+    """
+    Takes a key list and decodes it into a card
+    :param key_list:
+    :return: A treys card
+    """
+    return int_to_trey_card(sum(key_list) % 52)
+
+
+def decode_key_lists(key_list1, key_list2):
+    """
+    Takes to encoded key_lists into one decoded one
+    :param key_list1:
+    :param key_list2:
+    :return: Decoded key list
+    """
+    for i in range(len(key_list1)):
+        if key_list1[i] == 52:
+            key_list1[i] = key_list2[i]
+
+        elif key_list2[i] != 52 and key_list1[i] != key_list2[i]:
+            print("These key lists are not the same.")
+            return None
+
+    return key_list1
+
+
+def generate_key_list(card_treys):
+    """
+    Makes a list of numbers from 0 to 51 to encode the card received.
+    :param card_treys: Takes a treys card
+    :return: returns the list of 10 numbers
+    """
+    key_list = []
+    card_int = card_treys_to_int(card_treys)
+
+    for i in range(9):
+        key_list.append(random.randrange(0, 51))
+
+    key_list.append((card_int - sum(key_list)) % 52)
+
+    return key_list
+
+
+def request_card_codes(card_string):
+    print(card_string)
+    #TODO Fabian request cards anyone
+
+
 class Poker:
 
     def __init__(self, name):
@@ -55,7 +124,7 @@ class Poker:
             key_dict[place] = []
 
             for card_treys in self.card_state[place]:
-                key_dict[place].append(self.generate_key_list(card_treys))
+                key_dict[place].append(generate_key_list(card_treys))
 
         n = 0
         code_dict = {}
@@ -79,65 +148,6 @@ class Poker:
 
         #TODO Fabian karten verteilen
 
-    def generate_key_list(self, card_treys):
-        """
-        Makes a list of numbers from 0 to 51 to encode the card received.
-        :param card_treys: Takes a treys card
-        :return: returns the list of 10 numbers
-        """
-        key_list = []
-        card_int = self.card_treys_to_int(card_treys)
-
-        for i in range(9):
-            key_list.append(random.randrange(0, 51))
-
-        key_list.append((card_int - sum(key_list)) % 52)
-
-        return key_list
-
-    def decode_key_lists(self, key_list1, key_list2):
-        """
-        Takes to encoded key_lists into one decoded one
-        :param key_list1:
-        :param key_list2:
-        :return: Decoded key list
-        """
-        for i in range(len(key_list1)):
-            if key_list1[i] == 52:
-                key_list1[i] = key_list2[i]
-
-            elif key_list2[i] != 52 and key_list1[i] != key_list2[i]:
-                print("These key lists are not the same.")
-                return None
-
-        return key_list1
-
-    def key_list_to_card(self, key_list):
-        """
-        Takes a key list and decodes it into a card
-        :param key_list:
-        :return: A treys card
-        """
-        return self.int_to_trey_card(sum(key_list) % 52)
-
-    def card_treys_to_int(self, card_treys):
-        """
-        Turns an integer representation from the treys library into a 0 to 51 integer.
-        :param card_treys:
-        :return: 0-51 integer representation of card
-        """
-
-        return int(Card.get_rank_int(card_treys) + 13 * math.log(Card.get_suit_int(card_treys), 2))
-
-    def int_to_trey_card(self, card_int):
-        """
-        Turns an 0-51 integer representation into a card from the treys library
-        :param card_int:
-        :return: A card from the treys library
-        """
-
-        return Card.new(ranks[card_int % 13] + suits[card_int // 13])
-
     def connect_to_players(self, player_list):
 
         next_is_next = False
@@ -155,10 +165,6 @@ class Poker:
         if next_is_next:
             self.next_player = self.players[player_list[-1]]
 
-    def request_card_codes(self, card_string):
-        print(card_string)
-        #TODO Fabian request cards anyone
-
     def next_round(self):
 
         self.log.append("next round")
@@ -168,16 +174,16 @@ class Poker:
         if not self.open:
             match self.round:
                 case 1:
-                    self.request_card_codes("b1")
+                    request_card_codes("b1")
 
                 case 2:
-                    self.request_card_codes("b2")
+                    request_card_codes("b2")
 
                 case 3:
-                    self.request_card_codes("b3")
+                    request_card_codes("b3")
 
                 case 4:
-                    self.request_card_codes("players")
+                    request_card_codes("players")
                     self.trigger_end()
 
     #TODO remove socket
@@ -215,7 +221,7 @@ class Poker:
             self.card_state[card_string] = []
 
             for card in zip(code_list, self.code_state[card_string]):
-                self.card_state[card_string].append(self.key_list_to_card(self.decode_key_lists(card[0], card[1])))
+                self.card_state[card_string].append(key_list_to_card(decode_key_lists(card[0], card[1])))
 
         else:
             match card_string:
@@ -223,13 +229,13 @@ class Poker:
                     self.card_state["board"] = []
                     for i in range(3):
                         self.card_state["board"].append(
-                            self.key_list_to_card(self.decode_key_lists(code_list[i], self.code_state["board"][i])))
+                            key_list_to_card(decode_key_lists(code_list[i], self.code_state["board"][i])))
                 case "b2":
                     self.card_state["board"].append(
-                        self.key_list_to_card(self.decode_key_lists(code_list[0], self.code_state["board"][3])))
+                        key_list_to_card(decode_key_lists(code_list[0], self.code_state["board"][3])))
                 case "b2":
                     self.card_state["board"].append(
-                        self.key_list_to_card(self.decode_key_lists(code_list[0], self.code_state["board"][4])))
+                        key_list_to_card(decode_key_lists(code_list[0], self.code_state["board"][4])))
 
         #TODO Fabian Implement receiving cards
 
@@ -288,7 +294,7 @@ class Poker:
 
         if playing_num == 1 and in_game_num > 1:
             self.open = True
-            self.request_card_codes("players")
+            request_card_codes("players")
 
     def trigger_end(self):
 
