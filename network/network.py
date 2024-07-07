@@ -24,7 +24,7 @@ class P2PNode:
         self.bp = port
         self.sp = _server_port
         self.name = "client-" + str(self.sp)
-        self.game_master = GameMaster()  # shared between client and server to avoid sync problems
+        self.game_master = GameMaster(self)  # shared between client and server to avoid sync problems
 
     def has_connection(self, client_name: [str, None], port: int) -> bool:
         for c in self.clients:
@@ -37,7 +37,7 @@ class P2PNode:
             return False
         c = P2PClient(self, port, "client-" + str(self.sp))
         self.clients.append(c)
-        asyncio.ensure_future(c.send_some_data())
+        asyncio.ensure_future(c.connect_to_socket())
         return True
 
     def get_client_by_name(self, name: str) -> [P2PClient, None]:
@@ -81,17 +81,8 @@ class P2PNode:
         if command == "search_game":
             log("[server] Searching for game")
             # Send to all connected clients -> ttl of 1-2
-            game = Game("Game-" + str(self.sp))
-            game.set_master("client-" + str(self.sp))
-            self.game_master.add_game(game)
+            game = self.game_master.create_game("Game-" + str(self.sp))
             await self.server.broadcast_message(GameSearchMessage(ttl=2, sender=None, game=game.get_client_object()))
-            return
-
-        if command == "test":
-            game_update = GameUpdateMessage(self.game_master.games[0], "test", "test123")
-            game_update.update_game_with_data()
-            await self.server.broadcast_message(
-                game_update)  # todo dont broadcast, send only to clients related to game
             return
 
         if command == "test3":

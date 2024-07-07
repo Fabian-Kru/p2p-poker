@@ -9,10 +9,16 @@ from game.game import Game
 
 
 class GameUpdateMessage:
+
+    receiver = None
+
     def __init__(self, game: Game, game_object: any, game_value: any) -> None:
         self.game = game
         self.game_object = game_object
         self.game_value = game_value
+
+    def set_receiver(self, receiver: Type) -> None:
+        self.receiver = receiver
 
     def update_game_with_data(self) -> None:
         self.game.update(self)

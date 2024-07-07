@@ -94,7 +94,7 @@ class P2PClient:
         log("[client] Sending message:", message)
         self.client.send(pickle.dumps(message))
 
-    async def send_some_data(self) -> None:
+    async def connect_to_socket(self) -> None:
         if self.port == -1:
             log("[client] Cannot connect to bootstrap server")
             return
