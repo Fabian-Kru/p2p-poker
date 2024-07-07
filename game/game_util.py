@@ -12,4 +12,7 @@ class Actions(Enum):
     ERROR_NOT_PLAYING = -2
     ERROR_ACTION_NOT_FOUND = -3
 
+    def __str__(self):
+        return self.name
+
 

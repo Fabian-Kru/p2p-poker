@@ -58,7 +58,7 @@ class P2PServer:
         """
         request = None
         while request != 'quit':
-            request = await asyncio.get_event_loop().sock_recv(client, 1024)
+            request = await asyncio.get_event_loop().sock_recv(client, 60000)
 
             if client not in self.connections:
                 self.connections.append(client)
@@ -124,10 +124,12 @@ class P2PServer:
     async def broadcast_message(self, message) -> None:
 
         if isinstance(message, GameUpdateMessage) and message.receiver is not None:
-            log("[server] Sending to", message.receiver)
+            log("[server - GUM] Sending to", message.receiver)
             await self.send_to_client(message.receiver, message)
             return
-
+        print(self.clients)
+        print(message)
         for client in self.connections:
-            log("[server] Sending to", self.clients[client.getpeername()].name)
-            client.send(pickle.dumps(message))
+            log("[server- conn] Sending to", self.clients[client.getpeername()].name, " >", client.getpeername())
+            await self.node.send_to_client(self.clients[client.getpeername()].name, message)
+           #TODO ?? client.send(pickle.dumps(message))

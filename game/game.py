@@ -1,26 +1,31 @@
+from typing import Optional
+
+from game.player import Player
 from util.logging import log
 
 
 class Game:
-
     game_id: str = None
     is_master: bool = False
     master: str = None
     data: dict = {}
     clients: list = []
+    myself = None
 
-    def __init__(self, game_id) -> None:
-        log("[game] Game created with id:", game_id)
+    def __init__(self, game_id, own_name, dont_log=False) -> None:
+        if not dont_log:
+            log("[game] Game created with id:", game_id)
         self.game_id = game_id
+        self.myself = Player(own_name)
 
     def get_client_object(self):
-        g = Game(self.game_id)
+        g = Game(self.game_id, self.myself, True)
         g.data = self.data
         g.is_master = False
         g.master = self.master
         return g
 
-    def __add_client(self, client):
+    def add_client_local(self, client):
         if client not in self.clients:
             self.clients.append(client)
 
@@ -38,4 +43,11 @@ class Game:
         self.master = name
 
     def __str__(self) -> str:
-        return "Game: " + self.game_id + " " + str(self.data) + " " + str(self.is_master) + " " + str(self.master) + " " + str(self.clients)
+        return (
+                "Game: "
+                + self.game_id
+                + " " + str(self.data)
+                + " " + str(self.is_master)
+                + " " + str(self.master)
+                + " " + str(self.clients)
+        )

@@ -1,4 +1,4 @@
-from game_util import *
+from game.game_util import Actions
 
 
 class Player:
@@ -140,3 +140,6 @@ class Player:
 
     def is_my_socket(self, client_name):
         return self.name == client_name
+
+    def __str__(self):
+        return self.name + " " + str(self.chips) + " " + str(self.bet) + " " + str(self.status)

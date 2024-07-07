@@ -18,7 +18,8 @@ class GameMaster:
         for k, game in self.games.items():
             if k == game_id:
                 g = game["game"]
-                g.__add_client(client)
+                print(type(g))
+                g.add_client_local(client)
                 break
 
     def start_game(self, game):
@@ -29,6 +30,9 @@ class GameMaster:
         self.update_games(game.game_id, "started", True)
         poker: Poker = self.games[game.game_id]["poker"]
         poker.connect_to_players(game.clients)
+        player_cards = poker.deal_cards()
+        for player_name in player_cards:
+            print("[game] Dealing cards to:", player_cards[player_name])
 
     def update_games(self, game_id: str, key, value) -> None:
         for k, games in self.games.items():
@@ -38,9 +42,9 @@ class GameMaster:
 
     def create_game(self, game_id: str) -> Game:
         print("[game] Hosting game with id:", game_id)
-        game = Game(game_id)
+        game = Game(game_id, self.node.name)
         game.set_master(self.node.name)
-        game = self.add_game(game)
+        self.add_game(game)
         poker = Poker(self.node.name)
         # TODO add poker-game data only visible to game_master
         self.update_games(game_id, "poker", poker)
@@ -62,7 +66,8 @@ class GameMaster:
     def print_game(self) -> None:
         log("[game] Games:")
         for k, game in self.games.items():
-            log(game)
             log(game["game"])
+            log(game["game"].data["poker"])
+            log("----")
 
 

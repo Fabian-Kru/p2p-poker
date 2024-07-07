@@ -1,6 +1,7 @@
 import asyncio
 import pickle
 import socket
+import traceback
 
 from data.AnnouncePeerMessage import AnnouncePeerMessage
 from data.ClientMetaData import ClientMetaData
@@ -26,8 +27,7 @@ class P2PClient:
 
     async def receive_data(self, client_socket) -> None:
         while True:
-            try:
-                response = await asyncio.to_thread(client_socket.recv, 1024)
+                response = await asyncio.to_thread(client_socket.recv, 60000)
                 if response:
                     data = pickle.loads(response)
 
@@ -80,12 +80,9 @@ class P2PClient:
                     else:
                         log("[client] Received unknown: ", data)
                 else:
+                    log("[client] Connection closed")
                     client_socket.close()
                     break
-            except Exception as e:
-                log(e)
-                client_socket.close()
-                break
 
     def knows_client(self, client_name: str) -> bool:
         return client_name in [self.clients[x].name for x in self.clients]

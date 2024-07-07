@@ -48,14 +48,30 @@ class P2PNode:
         return self.server.known_client(receiver) or (True in [x.knows_client(receiver) for x in self.clients])
 
     async def send_to_client(self, client_name: str, message: bytes) -> None:
+
         # check if client knows client
         client = self.get_client_by_name(client_name)
 
         if client is not None:
-            asyncio.ensure_future(client.send_message(message))
+
+            if isinstance(message, (bytes, bytearray)):
+                asyncio.ensure_future(client.send(message))
+                print(len(message))
+                print(pickle.loads(message))
+            else:
+                message = pickle.dumps(message)
+                print(len(message))
+                print(pickle.loads(message))
+                asyncio.ensure_future(client.send(message))
+
             return
 
         if self.server.known_client(client_name):
+            if not isinstance(message, (bytes, bytearray)):
+                message = pickle.dumps(message)
+
+            print(len(message))
+            print(pickle.loads(message))
             asyncio.ensure_future(self.server.send_to_client(client_name, message))
             return
 
@@ -86,13 +102,12 @@ class P2PNode:
         if command == "start_game":
             print("[server] Starting game")
             game_id = "Game-" + str(self.sp)
-            game = self.game_master.get_or_add_game(Game(game_id))
+            game = self.game_master.get_or_add_game(Game(game_id, self.name))
             if game is None:
                 print("[server] Game not found")
                 return
             self.game_master.start_game(game)
             return
-
 
         if command == "test3":
             self.connect_to_node("127.0.0.1", 5454)
@@ -123,7 +138,6 @@ class P2PNode:
             message = " ".join(parts[2:])
             await self.send_to_client(client_name, pickle.dumps(Message(message)))
             return
-
 
 
 async def input_handler(_network) -> None:

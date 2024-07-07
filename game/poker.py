@@ -2,8 +2,8 @@ import treys
 from treys import Card, Deck
 import math
 import random
-import player
-from game_util import Actions
+from game import player
+from game.game_util import Actions
 
 ranks = {0: "2", 1: "3", 2: "4", 3: "5", 4: "6", 5: "7", 6: "8", 7: "9", 8: "T", 9: "J", 10: "Q", 11: "K", 12: "A"}
 suits = {0: "s", 1: "h", 2: "d", 3: "c"}
@@ -75,7 +75,7 @@ def generate_key_list(card_treys):
 
 def request_card_codes(card_string):
     print(card_string)
-    #TODO Fabian request cards anyone
+    # TODO Fabian request cards anyone
 
 
 class Poker:
@@ -146,7 +146,7 @@ class Poker:
 
         return code_dict
 
-        #TODO Fabian karten verteilen
+        # TODO Fabian karten verteilen
 
     def connect_to_players(self, player_list):
 
@@ -186,7 +186,7 @@ class Poker:
                     request_card_codes("players")
                     self.trigger_end()
 
-    #TODO remove socket
+    # TODO remove socket
     def card_permission(self, card_string, client_name):
         match card_string:
             case "b1":
@@ -214,7 +214,7 @@ class Poker:
                 case _:
                     return self.code_state[card_string]
 
-        #TODO Fabian send karten
+        # TODO Fabian send karten
 
     def receive_card_codes(self, card_string, code_list):
         if card_string in self.players:
@@ -237,7 +237,7 @@ class Poker:
                     self.card_state["board"].append(
                         key_list_to_card(decode_key_lists(code_list[0], self.code_state["board"][4])))
 
-        #TODO Fabian Implement receiving cards
+        # TODO Fabian Implement receiving cards
 
     def player_action(self, command_list):
         player_obj = self.players(command_list[0])
@@ -275,7 +275,7 @@ class Poker:
 
         return status
 
-    #TODO Fabian aufrufen
+    # TODO Fabian aufrufen
 
     def check_open(self):
 
@@ -335,6 +335,9 @@ class Poker:
                 n += 1
 
         return n
+
+    def __str__(self):
+        return "Poker: " + self.name + " " + str(self.players) + " " + str(self.card_state) + " " + str(self.code_state) + " " + str(self.round) + " " + str(self.next_player) + " " + str(self.open) + " " + str(self.current_bet) + " " + str(self.log)
 
 
 if __name__ == "__main__":
