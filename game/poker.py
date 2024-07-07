@@ -3,7 +3,7 @@ from treys import Card, Deck
 import math
 import random
 import player
-from enums import *
+from game_util import Actions
 
 ranks = {0: "2", 1: "3", 2: "4", 3: "5", 4: "6", 5: "7", 6: "8", 7: "9", 8: "T", 9: "J", 10: "Q", 11: "K", 12: "A"}
 suits = {0: "s", 1: "h", 2: "d", 3: "c"}
@@ -199,7 +199,7 @@ class Poker:
                 if self.round >= 4 or self.open:
                     return True
                 elif card_string in self.players and self.players[card_string].is_my_socket(client_name):
-                    return self.players[card_string].status == PLAYING or self.players[card_string].status == ALL_IN
+                    return self.players[card_string].status == Actions.PLAYING or self.players[card_string].status == Actions.ALL_IN
 
     def get_card_codes(self, card_string, client_name):
 
@@ -262,7 +262,7 @@ class Poker:
             case "call":
                 status = player_obj.poker_call(self.current_bet)
             case _:
-                status = ERROR_ACTION_NOT_FOUND
+                status = Actions.ERROR_ACTION_NOT_FOUND
 
         if self.active_players() == 1:
             self.trigger_end()
@@ -283,13 +283,13 @@ class Poker:
         in_game_num = 0
 
         for player_obj in self.players:
-            if player_obj.status == PLAYING:
+            if player_obj.status == Actions.PLAYING:
                 playing_num += 1
                 in_game_num += 1
                 if playing_num >= 2:
                     break
 
-            if player_obj.status == ALL_IN:
+            if player_obj.status == Actions.ALL_IN:
                 in_game_num += 1
 
         if playing_num == 1 and in_game_num > 1:
@@ -331,7 +331,7 @@ class Poker:
     def active_players(self):
         n = 0
         for player_obj in self.players:
-            if player_obj.status == PLAYING or player_obj.status == ALL_IN:
+            if player_obj.status == Actions.PLAYING or player_obj.status == Actions.ALL_IN:
                 n += 1
 
         return n

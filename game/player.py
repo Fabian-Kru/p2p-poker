@@ -1,4 +1,4 @@
-from enums import *
+from game_util import *
 
 
 class Player:
@@ -8,7 +8,7 @@ class Player:
         self.name = name
         self.chips = 1000
         self.bet = 0
-        self.status = PLAYING
+        self.status = Actions.PLAYING
 
     def __str__(self):
 
@@ -17,13 +17,13 @@ class Player:
     def new_round(self):
         self.bet = 0
         if self.chips == 0:
-            self.status = CHIPLESS
+            self.status = Actions.CHIPLESS
 
-        if not self.status == CHIPLESS:
-            self.status = PLAYING
+        if not self.status == Actions.CHIPLESS:
+            self.status = Actions.PLAYING
 
     def set_dealer(self):
-        self.status = DEALER
+        self.status = Actions.DEALER
 
     def new_game(self):
         """
@@ -33,7 +33,7 @@ class Player:
 
         self.chips = 1000
         self.bet = 0
-        self.status = PLAYING
+        self.status = Actions.PLAYING
 
     def poker_raise(self, chips, current_bet):
         """
@@ -42,19 +42,19 @@ class Player:
         :return: Returns the amount of chips or an Error if the raise is not possible.
         """
 
-        if self.status != PLAYING:
-            return ERROR_NOT_PLAYING
+        if self.status != Actions.PLAYING:
+            return Actions.ERROR_NOT_PLAYING
 
         chips += current_bet - self.bet
         
         if chips > self.chips:
-            return ERROR_NOT_ENOUGH_CHIPS
+            return Actions.ERROR_NOT_ENOUGH_CHIPS
 
         self.chips -= chips
         self.bet += chips
 
         if self.chips == 0:
-            self.status = ALL_IN
+            self.status = Actions.ALL_IN
 
         return chips
 
@@ -65,11 +65,11 @@ class Player:
         :return: Returns the amount of chips or an Error if the raise is not possible.
         """
 
-        if self.status != PLAYING:
-            return ERROR_NOT_PLAYING
+        if self.status != Actions.PLAYING:
+            return Actions.ERROR_NOT_PLAYING
 
-        if self.status != PLAYING:
-            return ERROR_NOT_ENOUGH_CHIPS
+        if self.status != Actions.PLAYING:
+            return Actions.ERROR_NOT_ENOUGH_CHIPS
 
         chips = min(chips, self.chips)
 
@@ -77,7 +77,7 @@ class Player:
         self.bet += chips
 
         if self.chips == 0:
-            self.status = ALL_IN
+            self.status = Actions.ALL_IN
 
         return chips
 
@@ -87,10 +87,10 @@ class Player:
         :return:
         """
 
-        if self.status != PLAYING:
-            return ERROR_NOT_PLAYING
+        if self.status != Actions.PLAYING:
+            return Actions.ERROR_NOT_PLAYING
 
-        self.status = FOLDED
+        self.status = Actions.FOLDED
 
         return 0
 
@@ -99,8 +99,8 @@ class Player:
 
     def poker_call(self, current_bet):
 
-        if self.status != PLAYING:
-            return ERROR_NOT_PLAYING
+        if self.status != Actions.PLAYING:
+            return Actions.ERROR_NOT_PLAYING
 
         chips = current_bet - self.bet
 
@@ -108,14 +108,14 @@ class Player:
         self.bet += chips
 
         if self.chips == 0:
-            self.status = ALL_IN
+            self.status = Actions.ALL_IN
 
         return chips
 
     def available_actions(self, current_bet):
         action_list = []
 
-        if self.status == PLAYING:
+        if self.status == Actions.PLAYING:
             if current_bet - self.bet < self.chips:
                 action_list.append("raise")
 
