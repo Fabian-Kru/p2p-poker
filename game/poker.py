@@ -187,7 +187,7 @@ class Poker:
                     self.trigger_end()
 
     #TODO remove socket
-    def card_permission(self, card_string, socket):
+    def card_permission(self, card_string, client_name):
         match card_string:
             case "b1":
                 return self.round >= 1
@@ -198,12 +198,12 @@ class Poker:
             case _:
                 if self.round >= 4 or self.open:
                     return True
-                elif card_string in self.players and self.players[card_string].is_my_socket(socket):
+                elif card_string in self.players and self.players[card_string].is_my_socket(client_name):
                     return self.players[card_string].status == PLAYING or self.players[card_string].status == ALL_IN
 
-    def get_card_codes(self, card_string, socket):
+    def get_card_codes(self, card_string, client_name):
 
-        if self.card_permission(card_string, socket):
+        if self.card_permission(card_string, client_name):
             match card_string:
                 case "b1":
                     return self.code_state["board"][0:2]

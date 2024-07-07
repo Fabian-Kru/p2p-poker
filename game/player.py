@@ -138,10 +138,5 @@ class Player:
             self.bet -= chips
             return chips, False
 
-
-    #TODO Implement connect to other players
-    def connect_to_player(self, address):
-        self.socket = address
-
-    def is_my_socket(self, socket):
-        return socket == self.socket
+    def is_my_socket(self, client_name):
+        return self.name == client_name
