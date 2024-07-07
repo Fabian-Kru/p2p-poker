@@ -45,7 +45,7 @@ class P2PClient:
                         # todo decide to join game or not
                         self.node.game_master.add_game(data.game)
                         game = self.node.game_master.get_or_add_game(data.game)
-                        game.add_client(self.name)
+                        self.node.game_master.add_client(self.name, game)
                         client_socket.send(pickle.dumps(GameJoinMessage(data.game, self.name)))
                         log("[client] >GameJoinMessage sent", data.game, self.name)
                         # TODO gjm -> game_master -> game_update -> all_clients
@@ -60,7 +60,7 @@ class P2PClient:
                     elif isinstance(data, GameJoinMessage):
                         log("[client] >GameJoinMessage received", data)
                         game = self.node.game_master.get_or_add_game(data.game)
-                        game.add_client(data.player)
+                        self.node.game_master.add_client(data.player, game)
 
                         update_data = GameUpdateMessage(game, "clients", game.clients)
                         # TODO gjm -> game_master -> game_update -> all_clients

@@ -14,17 +14,34 @@ class GameMaster:
         self.games = {}
         self.node = node
 
-    def update_games(self, game_id: str, key, value) -> None:
+    def add_client(self, game_id: str, client) -> None:
         for k, game in self.games.items():
             if k == game_id:
-                game["game"].data[key] = value
+                g = game["game"]
+                g.__add_client(client)
+                break
+
+    def start_game(self, game):
+        if game.game_id not in self.games.keys():
+            log("[game] Game not found!")
+            return
+        log("[game] Starting game with id:", game.game_id)
+        self.update_games(game.game_id, "started", True)
+        poker: Poker = self.games[game.game_id]["poker"]
+        poker.connect_to_players(game.clients)
+
+    def update_games(self, game_id: str, key, value) -> None:
+        for k, games in self.games.items():
+            if k == game_id:
+                games["game"].data[key] = value
+                break
 
     def create_game(self, game_id: str) -> Game:
         print("[game] Hosting game with id:", game_id)
         game = Game(game_id)
         game.set_master(self.node.name)
         game = self.add_game(game)
-        poker = Poker()
+        poker = Poker(self.node.name)
         # TODO add poker-game data only visible to game_master
         self.update_games(game_id, "poker", poker)
 
@@ -47,3 +64,5 @@ class GameMaster:
         for k, game in self.games.items():
             log(game)
             log(game["game"])
+
+

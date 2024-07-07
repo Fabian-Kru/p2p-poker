@@ -1,16 +1,14 @@
 import asyncio
 import pickle
+from typing import TYPE_CHECKING, List
 
 from client import P2PClient
 from data.ForwardMessage import ForwardMessage
 from data.Message import Message
 from data.game.GameSearchMessage import GameSearchMessage
-from data.game.GameUpdateMessage import GameUpdateMessage
 from game.game import Game
 from game.gamemanager import GameMaster
-
 from util.logging import log
-from typing import TYPE_CHECKING, List
 
 if not TYPE_CHECKING:
     from server import P2PServer
@@ -84,6 +82,17 @@ class P2PNode:
             game = self.game_master.create_game("Game-" + str(self.sp))
             await self.server.broadcast_message(GameSearchMessage(ttl=2, sender=None, game=game.get_client_object()))
             return
+
+        if command == "start_game":
+            print("[server] Starting game")
+            game_id = "Game-" + str(self.sp)
+            game = self.game_master.get_or_add_game(Game(game_id))
+            if game is None:
+                print("[server] Game not found")
+                return
+            self.game_master.start_game(game)
+            return
+
 
         if command == "test3":
             self.connect_to_node("127.0.0.1", 5454)

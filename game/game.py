@@ -20,7 +20,7 @@ class Game:
         g.master = self.master
         return g
 
-    def add_client(self, client):
+    def __add_client(self, client):
         if client not in self.clients:
             self.clients.append(client)
 

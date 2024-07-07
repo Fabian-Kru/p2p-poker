@@ -9,10 +9,9 @@ ranks = {0: "2", 1: "3", 2: "4", 3: "5", 4: "6", 5: "7", 6: "8", 7: "9", 8: "T",
 suits = {0: "s", 1: "h", 2: "d", 3: "c"}
 
 
-
 class Poker:
 
-    def __init__(self):
+    def __init__(self, name):
 
         self.card_state = {}
         self.players = {}
@@ -20,7 +19,7 @@ class Poker:
         self.log = []
         self.round = 0
         self.next_player = ""
-        self.name = ""
+        self.name = name
         self.open = False
         self.current_bet = 0
 
@@ -50,13 +49,12 @@ class Poker:
             self.card_state[player_obj] = deck.draw(2)
 
         key_dict = {}
-        
+
         for place in self.card_state:
-            
+
             key_dict[place] = []
-            
+
             for card_treys in self.card_state[place]:
-                
                 key_dict[place].append(self.generate_key_list(card_treys))
 
         n = 0
@@ -71,7 +69,6 @@ class Poker:
                 code_dict[player_name][place] = []
 
                 for key_list in key_dict[place]:
-
                     temp_list = key_list.copy()
                     temp_list[n] = 52
                     code_dict[player_name][place].append(temp_list)
@@ -81,7 +78,6 @@ class Poker:
         return code_dict
 
         #TODO Fabian karten verteilen
-
 
     def generate_key_list(self, card_treys):
         """
@@ -93,8 +89,7 @@ class Poker:
         card_int = self.card_treys_to_int(card_treys)
 
         for i in range(9):
-            key_list.append(random.randrange(0,51))
-
+            key_list.append(random.randrange(0, 51))
 
         key_list.append((card_int - sum(key_list)) % 52)
 
@@ -133,7 +128,6 @@ class Poker:
         """
 
         return int(Card.get_rank_int(card_treys) + 13 * math.log(Card.get_suit_int(card_treys), 2))
-
 
     def int_to_trey_card(self, card_int):
         """
@@ -228,14 +222,17 @@ class Poker:
                 case "b1":
                     self.card_state["board"] = []
                     for i in range(3):
-                        self.card_state["board"].append(self.key_list_to_card(self.decode_key_lists(code_list[i], self.code_state["board"][i])))
+                        self.card_state["board"].append(
+                            self.key_list_to_card(self.decode_key_lists(code_list[i], self.code_state["board"][i])))
                 case "b2":
-                    self.card_state["board"].append(self.key_list_to_card(self.decode_key_lists(code_list[0], self.code_state["board"][3])))
+                    self.card_state["board"].append(
+                        self.key_list_to_card(self.decode_key_lists(code_list[0], self.code_state["board"][3])))
                 case "b2":
-                    self.card_state["board"].append(self.key_list_to_card(self.decode_key_lists(code_list[0], self.code_state["board"][4])))
+                    self.card_state["board"].append(
+                        self.key_list_to_card(self.decode_key_lists(code_list[0], self.code_state["board"][4])))
 
         #TODO Fabian Implement receiving cards
-    
+
     def player_action(self, command_list):
         player_obj = self.players(command_list[0])
         action = command_list[1]
@@ -301,8 +298,6 @@ class Poker:
             if player_name != "board":
                 values[player_name] = self.evaluator.evaluate(self.card_state[player_name], self.card_state["board"])
 
-
-
         chips_left_in_pot = True
 
         while chips_left_in_pot:
@@ -327,7 +322,6 @@ class Poker:
 
             self.players[winner].chips += winnings
 
-
     def active_players(self):
         n = 0
         for player_obj in self.players:
@@ -339,9 +333,8 @@ class Poker:
 
 if __name__ == "__main__":
 
-    poker = Poker()
-    
-    
+    poker = Poker("game-1")
+
     poker.connect_to_players(["p1", "p2", "p3"])
 
     cd = poker.deal_cards()

@@ -93,7 +93,7 @@ class P2PServer:
             elif isinstance(o, GameJoinMessage):
                 log("[server] >GameJoinMessage received", o)
                 game = self.node.game_master.get_or_add_game(o.game)
-                game.add_client(o.player)
+                self.node.game_master.add_client(game.game_id, o.player)
                 update_data = GameUpdateMessage(game, "clients", game.clients)
                 game.update(update_data) # update local cache
                 # TODO gjm -> game_master -> game_update -> all_clients
