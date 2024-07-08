@@ -31,6 +31,7 @@ class Player:
     def poker_raise(self, chips, current_bet) -> [Actions, int]:
         """
         Changes the player attributes for as if they raised during play.
+        :param current_bet: Amount of chips bet
         :param chips: Amount of chips raised
         :return: Returns the amount of chips or an Error if the raise is not possible.
         """
