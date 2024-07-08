@@ -146,8 +146,6 @@ class Poker:
 
         return code_dict
 
-        # TODO Fabian karten verteilen
-
     def connect_to_players(self, player_list):
 
         next_is_next = False
@@ -186,8 +184,7 @@ class Poker:
                     request_card_codes("players")
                     self.trigger_end()
 
-    # TODO remove socket
-    def card_permission(self, card_string, client_name):
+    def __card_permission(self, card_string, client_name):
         match card_string:
             case "b1":
                 return self.round >= 1
@@ -199,11 +196,12 @@ class Poker:
                 if self.round >= 4 or self.open:
                     return True
                 elif card_string in self.players and self.players[card_string].is_my_socket(client_name):
-                    return self.players[card_string].status == Actions.PLAYING or self.players[card_string].status == Actions.ALL_IN
+                    return (self.players[card_string].status == Actions.PLAYING
+                            or self.players[card_string].status == Actions.ALL_IN)
 
     def get_card_codes(self, card_string, client_name):
 
-        if self.card_permission(card_string, client_name):
+        if self.__card_permission(card_string, client_name):
             match card_string:
                 case "b1":
                     return self.code_state["board"][0:2]
@@ -258,7 +256,7 @@ class Poker:
             case "fold":
                 status = player_obj.poker_fold()
             case "check":
-                status = player_obj.poker_check()
+                status = 0 # for check -> next_player
             case "call":
                 status = player_obj.poker_call(self.current_bet)
             case _:

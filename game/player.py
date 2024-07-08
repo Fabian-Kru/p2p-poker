@@ -88,9 +88,6 @@ class Player:
 
         return 0
 
-    def poker_check(self) -> int:
-        return 0
-
     def poker_call(self, current_bet) -> [Actions, int]:
 
         if self.status != Actions.PLAYING:

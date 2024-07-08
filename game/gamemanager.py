@@ -30,20 +30,19 @@ class GameMaster:
             return
         log("[game] Starting game with id:", game.game_id)
         self.update_games(game.game_id, "started", True)
-        print(self.games[game.game_id].keys())
-        poker: Poker = self.games[game.game_id]["poker"]
+        poker: Poker = self.games[game.game_id]["poker"] # Poker.py hat nur der GameMaster, die Clients haben player.py
 
         if self.node.name not in game.clients:
             self.games[game.game_id]["game"].add_client_local(self.node.name)
 
-        print(game.clients)
         poker.connect_to_players(game.clients)
         player_cards = poker.deal_cards()
-        print(player_cards)
+
         for player_name in player_cards.keys():
-            print("[game] Dealing cards to:", player_name, player_cards[player_name][player_name])
-            update = GameUpdateMessage(game, "cards", player_cards[player_name][player_name])
+            print("[game] Dealing cards to:", player_name)
+            update = GameUpdateMessage(game, "cards", player_cards[player_name])
             self.handle_update(player_name, player_name, update)
+
         for player_name in player_cards.keys():
             self.handle_update(player_name, player_name, GameUpdateMessage(game, "next_player", poker.next_player.name))
 

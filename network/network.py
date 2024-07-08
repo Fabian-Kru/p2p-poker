@@ -83,8 +83,7 @@ class P2PNode:
 
     async def process_input(self, command: str) -> None:
 
-        if command == "search_game":
-            log("[server] Searching for game")
+        if command == "create_game":
             # Send to all connected clients -> ttl of 1-2
             game = self.game_master.create_game("Game-" + str(self.sp))
             await self.server.broadcast_message(GameSearchMessage(ttl=2, sender=None, game=game.get_client_object()))

@@ -5,6 +5,7 @@ from util.logging import log
 
 
 class Game:
+
     game_id: str = None
     is_master: bool = False
     master: str = None
@@ -12,7 +13,7 @@ class Game:
     clients: list = []
 
     cards: list = []
-    myself = None
+    myself: Player = None
 
     def __init__(self, game_id, own_name, dont_log=False) -> None:
         if not dont_log:
