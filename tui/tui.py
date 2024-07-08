@@ -1,6 +1,9 @@
+import asyncio
 import pytermgui as ptg
-from pytermgui import Container, Label, SizePolicy, Splitter, Button, Checkbox, Window, InputField
 
+from pytermgui import Container, Splitter, Window, InputField
+
+from data.game.GameSearchMessage import GameSearchMessage
 from game.player import Player
 
 
@@ -33,6 +36,7 @@ class Tui:
 
         self.node = node
 
+    # TODO
     def open_main(self):
         with ptg.WindowManager() as manager:
             window = (
@@ -41,8 +45,7 @@ class Tui:
                     "or press \"Help\" to get a brief description of the game.",
                     "",
                     Splitter(
-                        ["New Game", lambda *_: self.create_game(["blabla", "test"])],
-                        # ToDo Funktion zum Starten hinzufügen
+                        ["New Game", lambda *_: self.create_game(False)],
                         ["Find Games", lambda *_: self.find_games()],
                         ["Help", lambda *_: self.open_help()],
                         ["Exit", lambda *_: exit(0)],
@@ -81,6 +84,7 @@ class Tui:
 
             manager.add(window)
 
+    # TODO
     def find_games(self):
         # ToDo: Add Method to get all open games
         games = ["A", "B", "C", "Kekse"]
@@ -108,11 +112,14 @@ class Tui:
 
             manager.add(window)
 
-    def create_game(self, players):
-        # Aufrufen, sobald Spiel erstellt wurde...
+    def create_game(self, renew: bool = True):
         player_list = []
-        for player in players:
-            player_list.append(player)
+        if renew:
+            for player in self.node.game_master.get_current_game().clients():
+                player_list.append(player)
+        else:
+            game = self.node.game_master.create_game("Game-" + str(self.node.sp))
+            asyncio.ensure_future(self.node.server.broadcast_message(GameSearchMessage(ttl=2, sender=None, game=game.get_client_object())))
 
         with ptg.WindowManager() as manager:
             window = (
@@ -122,7 +129,7 @@ class Tui:
                         "Waiting for players..."
                     ),
                     Container(
-                        "Player list:",
+                        "[210] Player list:",
                         *player_list
                     ),
                     "",
