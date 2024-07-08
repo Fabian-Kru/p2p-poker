@@ -104,7 +104,8 @@ class GameMaster:
         log("[game] Games:")
         for k, game in self.games.items():
             log(game["game"])
-            log(game["poker"])
+            if "poker" in game.keys():
+                log(game["poker"])
             log("----")
 
     def get_current_game(self) -> Game:
