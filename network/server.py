@@ -124,12 +124,8 @@ class P2PServer:
     async def broadcast_message(self, message) -> None:
 
         if isinstance(message, GameUpdateMessage) and message.receiver is not None:
-            log("[server - GUM] Sending to", message.receiver)
             await self.send_to_client(message.receiver, message)
             return
-        print(self.clients)
-        print(message)
         for client in self.connections:
-            log("[server- conn] Sending to", self.clients[client.getpeername()].name, " >", client.getpeername())
             await self.node.send_to_client(self.clients[client.getpeername()].name, message)
            #TODO ?? client.send(pickle.dumps(message))

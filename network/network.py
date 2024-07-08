@@ -53,25 +53,16 @@ class P2PNode:
         client = self.get_client_by_name(client_name)
 
         if client is not None:
-
             if isinstance(message, (bytes, bytearray)):
                 asyncio.ensure_future(client.send(message))
-                print(len(message))
-                print(pickle.loads(message))
             else:
                 message = pickle.dumps(message)
-                print(len(message))
-                print(pickle.loads(message))
                 asyncio.ensure_future(client.send(message))
-
             return
 
         if self.server.known_client(client_name):
             if not isinstance(message, (bytes, bytearray)):
                 message = pickle.dumps(message)
-
-            print(len(message))
-            print(pickle.loads(message))
             asyncio.ensure_future(self.server.send_to_client(client_name, message))
             return
 
@@ -101,8 +92,7 @@ class P2PNode:
 
         if command == "start_game":
             print("[server] Starting game")
-            game_id = "Game-" + str(self.sp)
-            game = self.game_master.get_or_add_game(Game(game_id, self.name))
+            game = self.game_master.get_or_add_game(Game("Game-" + str(self.sp), self.name))
             if game is None:
                 print("[server] Game not found")
                 return

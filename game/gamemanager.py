@@ -1,5 +1,8 @@
+import asyncio
+import pickle
 from typing import Type
 
+from data.game.GameUpdateMessage import GameUpdateMessage
 from game.game import Game
 from game.poker import Poker
 from util.logging import log
@@ -18,7 +21,6 @@ class GameMaster:
         for k, game in self.games.items():
             if k == game_id:
                 g = game["game"]
-                print(type(g))
                 g.add_client_local(client)
                 break
 
@@ -28,27 +30,45 @@ class GameMaster:
             return
         log("[game] Starting game with id:", game.game_id)
         self.update_games(game.game_id, "started", True)
+        print(self.games[game.game_id].keys())
         poker: Poker = self.games[game.game_id]["poker"]
+
+        if self.node.name not in game.clients:
+            self.games[game.game_id]["game"].add_client_local(self.node.name)
+
+        print(game.clients)
         poker.connect_to_players(game.clients)
         player_cards = poker.deal_cards()
-        for player_name in player_cards:
-            print("[game] Dealing cards to:", player_cards[player_name])
+        print(player_cards)
+        for player_name in player_cards.keys():
+            print("[game] Dealing cards to:", player_name, player_cards[player_name][player_name])
+            update = GameUpdateMessage(game, "cards", player_cards[player_name][player_name])
+            update.set_receiver(player_name)
+
+            # send not to self
+            if player_name == self.node.name:
+                update.update_game_with_data()
+            else:
+                asyncio.ensure_future(
+                    self.node.send_to_client(player_name, pickle.dumps(update)))
 
     def update_games(self, game_id: str, key, value) -> None:
         for k, games in self.games.items():
             if k == game_id:
-                games["game"].data[key] = value
+                print("[game] Updating game with id:", game_id, key, "=", value)
+                self.games[game_id]["game"].data[key] = value
+                print(self.games[game_id]["game"])
                 break
 
     def create_game(self, game_id: str) -> Game:
         print("[game] Hosting game with id:", game_id)
         game = Game(game_id, self.node.name)
         game.set_master(self.node.name)
-        self.add_game(game)
+        game = self.add_game(game)
         poker = Poker(self.node.name)
         # TODO add poker-game data only visible to game_master
-        self.update_games(game_id, "poker", poker)
-
+        self.games[game_id]["poker"] = poker
+        print(self.games[game_id].keys())
         return game
 
     def add_game(self, game: Game) -> Game:
@@ -57,6 +77,7 @@ class GameMaster:
         return game
 
     def get_or_add_game(self, game: Game) -> Game:
+        print(">>",self.games.keys(), game.game_id)
         for g in self.games.keys():
             if g == game.game_id:
                 return self.games[g]["game"]
@@ -67,7 +88,7 @@ class GameMaster:
         log("[game] Games:")
         for k, game in self.games.items():
             log(game["game"])
-            log(game["game"].data["poker"])
+            log(game["poker"])
             log("----")
 
 

@@ -10,6 +10,8 @@ class Game:
     master: str = None
     data: dict = {}
     clients: list = []
+
+    cards: list = []
     myself = None
 
     def __init__(self, game_id, own_name, dont_log=False) -> None:
@@ -37,6 +39,10 @@ class Game:
         if data.game_object == "clients":
             self.clients = data.game_value
             del self.data[data.game_object]
+        if data.game_object == "cards":
+            self.cards = data.game_value
+            del self.data[data.game_object]
+
 
     def set_master(self, name: str) -> None:
         self.is_master = True
@@ -50,4 +56,5 @@ class Game:
                 + " " + str(self.is_master)
                 + " " + str(self.master)
                 + " " + str(self.clients)
+                + " " + str(self.cards)
         )
