@@ -87,18 +87,13 @@ class P2PServer:
             elif isinstance(o, AnnouncePeerMessage):
                 log(f"[server] Received: Announced ----> {o}")
             elif isinstance(o, GameUpdateMessage):
-                log("[server] >GameUpdateMessage received", o)
+                print("[server] >GameUpdateMessage received", o.game.game_id, o.game_object, o.game_value)
                 game = self.node.game_master.get_or_add_game(o.game)
                 game.update(o)
             elif isinstance(o, GameJoinMessage):
                 log("[server] >GameJoinMessage received", o)
                 game = self.node.game_master.get_or_add_game(o.game)
                 self.node.game_master.add_client(game.game_id, o.player)
-                update_data = GameUpdateMessage(game, "clients", game.clients)
-                game.update(update_data) # update local cache
-                # TODO gjm -> game_master -> game_update -> all_clients
-                for c in game.clients:
-                    await self.node.send_to_client(c, pickle.dumps(update_data))
             elif isinstance(o, ForwardMessage):
                 log("[server] >ForwardMessage received", o.message)
                 if self.node.knows_client(o.receiver):

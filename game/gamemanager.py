@@ -40,44 +40,46 @@ class GameMaster:
             return
         log("[game] Starting game with id:", game.game_id)
         self.update_games(game.game_id, "started", True)
-        poker: Poker = self.games[game.game_id]["poker"]  # Poker.py hat nur der GameMaster, die Clients haben player.py
 
         if self.node.name not in game.clients:
             self.games[game.game_id]["game"].add_client_local(self.node.name)
 
-        poker.set_players(game.clients)
-        player_cards = poker.deal_cards()
+        game.poker.set_players(game.clients)
+        player_cards = game.poker.deal_cards()
+
+        for players in player_cards:
+            self.handle_update(players, players, GameUpdateMessage(game, "clients", game.clients))
 
         for player_name in player_cards.keys():
             print("[game] Dealing cards to:", player_name)
             update = GameUpdateMessage(game, "cards", player_cards[player_name])
             self.handle_update(player_name, player_name, update)
 
-        for player_name in player_cards.keys():
-            self.handle_update(player_name, player_name, GameUpdateMessage(game, "next_player", poker.next_player.name))
+        print("Es startet: ", game.poker.next_player.name)
+        self.handle_update(game.poker.next_player.name, game.poker.next_player.name,
+                           GameUpdateMessage(game, "next_player", game.poker.next_player.name))
 
     def handle_update(self, receiver: [str, None], player_name: str, update: GameUpdateMessage) -> None:
 
         if receiver is not None:
             update.set_receiver(receiver)
 
-        if update.game.master == self.node.name and (player_name == self.node.name):  # master
-            poker: Poker = self.games[update.game.game_id]["poker"]
-            chips = 0
-            status = 0
-            match update.game_object:
-                case "action:raise":
-                    poker.player_action("raise", chips, status)
-                case "action:blinds":
-                    poker.player_action("blinds", chips, status)
-                case "action:check":
-                    poker.player_action("check", chips, status)
-
+    #    if update.game.master == self.node.name and (player_name == self.node.name):  # master
+    #        poker: Poker = update.game.poker
+    #        chips = 0
+    #        status = 0
+    #        match update.game_object:
+  #              case "action:raise":
+           #         poker.player_action("raise", chips, status)
+             #   case "action:blinds":
+           #         poker.player_action("blinds", chips, status)
+          #      case "action:check":
+ #                   poker.player_action("check", chips, status)
+#
         # send not to self
         if player_name == self.node.name and (update.game.master != self.node.name):
             update.update_game_with_data()
         else:
-            print("sending to", player_name, update.game_object)
             asyncio.ensure_future(self.node.send_to_client(player_name, pickle.dumps(update)))
 
     def update_games(self, game_id: str, key, value) -> None:
@@ -90,15 +92,15 @@ class GameMaster:
 
     def create_game(self, game_id: str) -> Game:
         print("[game] Hosting game with id:", game_id)
-        game = Game(game_id, self.node.name, self.node.name)
+        poker = Poker(self.node.name)
+        game = Game(game_id, self.node.name, self.node.name, poker)
         game.set_master(self.node.name)
         game = self.add_game(game)
-        poker = Poker(self, self.node.name, game)
-        # TODO add poker-game data only visible to game_master
-        self.games[game_id]["poker"] = poker
         return game
 
     def add_game(self, game: Game) -> Game:
+        game.own_name = self.node.name
+        game.poker.name = self.node.name
         log("[game] Game added with id:", game.game_id)
         self.games[game.game_id] = {"game": game}
         return game
@@ -121,7 +123,3 @@ class GameMaster:
     def get_current_game(self) -> Game:
         for k, game in self.games.items():
             return game["game"]
-
-    def get_current_poker(self) -> Poker:
-        for k, game in self.games.items():
-            return game["poker"]

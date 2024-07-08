@@ -1,11 +1,9 @@
-from data.game.GameUpdateMessage import GameUpdateMessage
 from game.game_util import Actions
 
 
 class Player:
 
-    def __init__(self, name, game):
-        self.game = game
+    def __init__(self, name):
         self.name = name
         self.chips = 1000
         self.bet = 0
@@ -19,7 +17,7 @@ class Player:
         if not self.status == Actions.CHIP_LESS:
             self.status = Actions.PLAYING
 
-    def poker_raise(self, chips, current_bet, game_master) -> [Actions, int]:
+    def poker_raise(self, chips, current_bet) -> [Actions, int]:
         """
         Changes the player attributes for as if they raised during play.
         :param current_bet: Amount of chips bet
@@ -41,15 +39,9 @@ class Player:
         if self.chips == 0:
             self.status = Actions.ALL_IN
 
-        for player in self.game.clients:
-            game_master.handle_update(
-                None,
-                player,
-                GameUpdateMessage(self.game, "action:raise", self.name + ":" + str(self.status.value) + ":" + str(chips))
-            )
         return chips
 
-    def poker_blinds(self, chips, game_master) -> [Actions, int]:
+    def poker_blinds(self, chips) -> [Actions, int]:
         """
         Changes the player attributes for as if they paid the blind during play.
         :param chips: Size of the blind
@@ -70,16 +62,9 @@ class Player:
         if self.chips == 0:
             self.status = Actions.ALL_IN
 
-        for player in self.game.clients:
-            game_master.handle_update(
-                None,
-                player,
-                GameUpdateMessage(self.game, "action:blinds", self.name + ":" + str(self.status.value) + ":" + str(chips))
-            )
-
         return chips
 
-    def poker_fold(self, game_master) -> [Actions, int]:
+    def poker_fold(self) -> [Actions, int]:
         """
         Player change for folding
         :return:
@@ -90,17 +75,9 @@ class Player:
 
         self.status = Actions.FOLDED
 
-        for player in self.game.clients:
-            game_master.handle_update(
-                None,
-                player,
-                GameUpdateMessage(self.game, "action:fold",
-                                  self.name + ":" + str(self.status.value))
-            )
-
         return 0
 
-    def poker_call(self, current_bet, game_master) -> [Actions, int]:
+    def poker_call(self, current_bet) -> [Actions, int]:
 
         if self.status != Actions.PLAYING:
             return Actions.ERROR_NOT_PLAYING
@@ -112,14 +89,6 @@ class Player:
 
         if self.chips == 0:
             self.status = Actions.ALL_IN
-
-        for player in self.game.clients:
-            game_master.handle_update(
-                None,
-                player,
-                GameUpdateMessage(self.game, "action:call",
-                                  self.name + ":" + str(chips) + ":" + str(self.status.value))
-            )
 
         return chips
 

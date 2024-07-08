@@ -38,6 +38,7 @@ class P2PNode:
         return False
 
     def connect_to_node(self, ip: str, port: int) -> bool:
+        self.name = "client-" + str(self.sp)
         if self.has_connection(None, port):
             return False
         c = P2PClient(self, port, "client-" + str(self.sp))
@@ -59,11 +60,7 @@ class P2PNode:
         client = self.get_client_by_name(client_name)
 
         if client is not None:
-            if isinstance(message, (bytes, bytearray)):
-                asyncio.ensure_future(client.send(message))
-            else:
-                message = pickle.dumps(message)
-                asyncio.ensure_future(client.send(message))
+            asyncio.ensure_future(client.send_message(message))
             return
 
         if self.server.known_client(client_name):
@@ -96,7 +93,7 @@ class P2PNode:
 
         if command == "start_game":
             print("[server] Starting game")
-            game = self.game_master.get_or_add_game(Game("Game-" + str(self.sp), self.name, self.name))
+            game = self.game_master.get_or_add_game(Game("Game-" + str(self.sp), self.name, self.name, None))
             if game is None:
                 print("[server] Game not found")
                 return
@@ -104,29 +101,35 @@ class P2PNode:
             return
 
         if command == "raise":
+            print("client-" + str(self.sp))
             result = (self.game_master
-                      .get_current_game().myself
-                      .poker_raise(1, current_bet=self.game_master.get_current_poker().current_bet,
-                                   game_master=self.game_master))
+                      .get_current_game()
+                      .poker
+                      .player_action(self.game_master, self.game_master.get_current_game(), "client-" + str(self.sp), "raise", 10))
             log("[server] Raise result:", result)
             return
 
         if command == "fold":
-            result = self.game_master.get_current_game().myself.poker_fold(self.game_master)
+            result = (self.game_master
+                      .get_current_game()
+                      .poker
+                      .player_action(self.game_master, self.game_master.get_current_game(), self.name, "fold", 10))
             log("[server] Fold result:", result)
             return
 
         if command == "call":
-            result = (self.game_master.get_current_game().myself
-                      .poker_call(
-                current_bet=self.game_master.get_current_poker().current_bet,
-                game_master=self.game_master))
+            result = (self.game_master
+                      .get_current_game()
+                      .poker
+                      .player_action(self.game_master, self.game_master.get_current_game(), self.name, "call", 10))
             log("[server] Call result:", result)
             return
 
         if command == "blinds":
-            result = (self.game_master.get_current_game().myself
-                      .poker_blinds(chips=0, game_master=self.game_master))
+            result = (self.game_master
+                      .get_current_game()
+                      .poker
+                      .player_action(self.game_master, self.game_master.get_current_game(), self.name, "blinds", 10))
             log("[server] Blinds result:", result)
             return
 
@@ -141,7 +144,7 @@ class P2PNode:
             return
 
         if command == "poker" or command == "p":
-            log(self.game_master.get_current_poker())
+            log(self.game_master.get_current_game().poker)
             return
 
         if command.startswith("send"):

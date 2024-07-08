@@ -59,17 +59,13 @@ class P2PClient:
                 if updated_message.ttl > 0:  # only forward if ttl > 0
                     await self.node.broadcast_message_with_ttl(updated_message, updated_message.ttl)
             elif isinstance(data, GameUpdateMessage):
-                print("[client] >GameUpdateMessage received", data.game, data.game_object, data.game_value)
+                print("[client] >GameUpdateMessage received", data.game.game_id, data.game_object, data.game_value)
                 game = self.node.game_master.get_or_add_game(data.game)
                 game.update(data)
             elif isinstance(data, GameJoinMessage):
                 log("[client] >GameJoinMessage received", data)
                 game = self.node.game_master.get_or_add_game(data.game)
                 self.node.game_master.add_client(data.player, game)
-
-                update_data = GameUpdateMessage(game, "clients", game.clients)
-                for c in game.clients:
-                    self.node.send_to_client(c, pickle.dumps(update_data))
 
             elif isinstance(data, ForwardMessage):
                 log("[client] >ForwardMessage received", data.message)
@@ -88,8 +84,10 @@ class P2PClient:
         return client_name in [self.clients[x].name for x in self.clients]
 
     async def send_message(self, message) -> None:
-        log("[client] Sending message:", message)
-        self.client.send(pickle.dumps(message))
+        if isinstance(message, (bytes, bytearray)):
+            self.client.send(message)
+        else:
+            self.client.send(pickle.dumps(message))
 
     async def connect_to_socket(self) -> None:
         if self.port == -1:

@@ -1,3 +1,4 @@
+from data.game.GameUpdateMessage import GameUpdateMessage
 from util.logging import log
 import treys
 from treys import Card, Deck
@@ -10,7 +11,7 @@ ranks = {0: "2", 1: "3", 2: "4", 3: "5", 4: "6", 5: "7", 6: "8", 7: "9", 8: "T",
 suits = {0: "s", 1: "h", 2: "d", 3: "c"}
 
 
-def card_treys_to_int(card_treys):
+def card_treys_to_int(card_treys: int):
     """
     Turns an integer representation from the treys library into a 0 to 51 integer.
     :param card_treys:
@@ -20,7 +21,7 @@ def card_treys_to_int(card_treys):
     return int(Card.get_rank_int(card_treys) + 13 * math.log(Card.get_suit_int(card_treys), 2))
 
 
-def int_to_trey_card(card_int):
+def int_to_trey_card(card_int: int):
     """
     Turns an 0-51 integer representation into a card from the treys library
     :param card_int:
@@ -30,7 +31,7 @@ def int_to_trey_card(card_int):
     return Card.new(ranks[card_int % 13] + suits[card_int // 13])
 
 
-def key_list_to_card(key_list):
+def key_list_to_card(key_list: list):
     """
     Takes a key list and decodes it into a card
     :param key_list:
@@ -39,7 +40,7 @@ def key_list_to_card(key_list):
     return int_to_trey_card(sum(key_list) % 52)
 
 
-def decode_key_lists(key_list1, key_list2):
+def decode_key_lists(key_list1: list, key_list2: list):
     """
     Takes to encoded key_lists into one decoded one
     :param key_list1:
@@ -57,7 +58,7 @@ def decode_key_lists(key_list1, key_list2):
     return key_list1
 
 
-def generate_key_list(card_treys):
+def generate_key_list(card_treys: int):
     """
     Makes a list of numbers from 0 to 51 to encode the card received.
     :param card_treys: Takes a treys card
@@ -76,15 +77,13 @@ def generate_key_list(card_treys):
 
 class Poker:
 
-    def __init__(self, game_master, name, game):
-        self.game_master = game_master
+    def __init__(self, name):
         self.card_state = {}
-        self.game = game
         self.players = {}
         self.code_state = {}
         self.log = []
         self.round = 0
-        self.next_player = ""
+        self.next_player = None
         self.name = name
         self.open = False
         self.current_bet = 0
@@ -96,9 +95,11 @@ class Poker:
         self.round = 0
         self.current_bet = 0
         self.open = False
+        for players in self.players:
+            players.new_round()
 
-    def request_card_codes(self, card_string):
-        self.game_master.deliver_card_code(self.game, self.name, card_string)
+    def request_card_codes(self, game_master, card_string, game):
+        game_master.deliver_card_code(game, self.name, card_string)
 
     def deal_cards(self):
         """
@@ -148,12 +149,12 @@ class Poker:
 
         for player_name in player_list:
             if player_name != self.name:
-                self.players[player_name] = player.Player(player_name, self.game)
+                self.players[player_name] = player.Player(player_name)
                 if next:
                     self.next_player = self.players[player_name]
                     next_is_next = False
             else:
-                self.players[player_name] = player.Player(player_name, self.game)
+                self.players[player_name] = player.Player(player_name)
                 next_is_next = True
 
         if next_is_next:
@@ -168,16 +169,16 @@ class Poker:
         if not self.open:
             match self.round:
                 case 1:
-                    request_card_codes("b1")
+                    self.request_card_codes("b1")
 
                 case 2:
-                    request_card_codes("b2")
+                    self.request_card_codes("b2")
 
                 case 3:
-                    request_card_codes("b3")
+                    self.request_card_codes("b3")
 
                 case 4:
-                    request_card_codes("players")
+                    self.request_card_codes("players")
                     self.trigger_end()
 
     def __card_permission(self, card_string, client_name):
@@ -233,32 +234,100 @@ class Poker:
 
         # TODO Implement receiving cards
 
-    def player_action(self, action, chips, status) -> None:
-        #  player_obj = self.players(player_name)
-        log("Player action: ", action, chips, status)
+    def player_action(self, game_master, game, player_name, action, chips) -> int:
+        player_obj = self.players[player_name]
+        log("Player action: ", player_obj, action, chips)
         match action:
             case "raise":
-                #  status = player_obj.poker_raise(chips, self.current_bet)
+                old_bet = self.current_bet
+                status = player_obj.poker_raise(chips, self.current_bet)
                 if status >= 0:
                     self.current_bet += status
+                print(player_obj)
+                for p in game.poker.players:
+                    if p == player_name:
+                        continue
+                    game_master.handle_update(
+                        p,
+                        p,
+                        GameUpdateMessage(game, "action:raise",
+                                          player_name + ":" + str(chips) + ":" + str(old_bet))
+                    )
             case "blinds":
-                #  status = player_obj.poker_blinde(chips)
+                status = player_obj.poker_blinde(chips)
                 if chips > self.current_bet:
                     self.current_bet = chips
-            #  case "fold":
-                # status = player_obj.poker_fold()
+                for p in game.poker.players:
+                    if p == player_name:
+                        continue
+                    game_master.handle_update(
+                        p,
+                        p,
+                        GameUpdateMessage(game, "action:blinds",
+                                          player_name + ":" + str(status) + ":" + str(chips) + ":" + str(
+                                              self.current_bet))
+                    )
+            case "fold":
+                status = player_obj.poker_fold()
+                for p in game.poker.players:
+                    if p == player_name:
+                        continue
+                    game_master.handle_update(
+                        p,
+                        p,
+                        GameUpdateMessage(game, "action:fold",
+                                          player_name + ":" + str(status) + ":" + str(chips) + ":" + str(
+                                              self.current_bet))
+                    )
             case "check":
                 status = 0  # for check -> next_player
-                #  case "call":
-                #   status = player_obj.poker_call(self.current_bet)
+                for p in game.poker.players:
+                    if p == player_name:
+                        continue
+                    game_master.handle_update(
+                        p,
+                        p,
+                        GameUpdateMessage(game, "action:check",
+                                          player_name + ":" + str(status) + ":" + str(chips) + ":" + str(
+                                              self.current_bet))
+                    )
+            case "call":
+                status = player_obj.poker_call(self.current_bet)
+                for p in game.poker.players:
+                    if p == player_name:
+                        continue
+                    game_master.handle_update(
+                        p,
+                        p,
+                        GameUpdateMessage(game, "action:call",
+                                          player_name + ":" + str(status) + ":" + str(chips) + ":" + str(
+                                              self.current_bet))
+                    )
             case _:
                 status = Actions.ERROR_ACTION_NOT_FOUND
+        # da diese Methode immer aufgerufen wird, wenn ein Zug zu ende ist -> nächster Spieler
+
+        plist = []
+        for pl, _ in self.players.items():
+            plist.append(pl)
+        next_player = plist[0]
+
+        for i, players in enumerate(plist):
+            if players == self.next_player.name:
+                next_player = plist[(i+1) % len(plist)]
+                for p in game.poker.players:
+                    game_master.handle_update(
+                        p,
+                        p,
+                        GameUpdateMessage(game, "next_player",next_player)
+                    )
+                break
 
         if self.active_players() == 1:
             self.trigger_end()
 
         self.check_open()
-
+        return status
 
     # TODO aufrufen
 
@@ -279,7 +348,7 @@ class Poker:
 
         if playing_num == 1 and in_game_num > 1:
             self.open = True
-            request_card_codes("players")
+            self.request_card_codes("players")
 
     def trigger_end(self):
 
@@ -314,14 +383,16 @@ class Poker:
             self.players[winner].chips += winnings
 
     def active_players(self):
-       # n = 0
-       # for player_obj in self.players:
-       #     if player_obj.status == Actions.PLAYING or player_obj.status == Actions.ALL_IN:
-       #         n += 1
-        # TODO Bin mir nicht sicher obs gleich ist, aber
-        return len(self.game.clients)
+        n = 0
+        for name, player_obj in self.players.items():
+            if player_obj.status == Actions.PLAYING or player_obj.status == Actions.ALL_IN:
+                n += 1
+        return n
 
     def __str__(self):
-        return "Poker: " + self.name + " " + str(self.players) + " " + str(self.card_state) + " " + str(
-            self.code_state) + " " + str(self.round) + " " + str(self.next_player) + " " + str(self.open) + " " + str(
-            self.current_bet) + " " + str(self.log)
+        return "Poker: " + self.name + " \nPlayers:" + '\n'.join(
+            [str(x) + "\n" for x in self.players.values()]) + " \nCard-State:" + str(
+            self.card_state) + " \nCode-State:" + str(
+            self.code_state) + " \nRound:" + str(self.round) + " \nNext:" + str(self.next_player) + " \nOpen:" + str(
+            self.open) + " \nBet:" + str(
+            self.current_bet)
