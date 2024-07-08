@@ -96,7 +96,7 @@ class P2PNode:
 
         if command == "start_game":
             print("[server] Starting game")
-            game = self.game_master.get_or_add_game(Game("Game-" + str(self.sp), self.name))
+            game = self.game_master.get_or_add_game(Game("Game-" + str(self.sp), self.name, self.name))
             if game is None:
                 print("[server] Game not found")
                 return

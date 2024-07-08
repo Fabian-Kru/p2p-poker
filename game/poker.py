@@ -74,11 +74,6 @@ def generate_key_list(card_treys):
     return key_list
 
 
-def request_card_codes(card_string):
-    print(card_string)
-    # TODO Fabian request cards anyone
-
-
 class Poker:
 
     def __init__(self, game_master, name, game):
@@ -101,6 +96,9 @@ class Poker:
         self.round = 0
         self.current_bet = 0
         self.open = False
+
+    def request_card_codes(self, card_string):
+        self.game_master.deliver_card_code(self.game, self.name, card_string)
 
     def deal_cards(self):
         """
@@ -144,7 +142,7 @@ class Poker:
 
         return code_dict
 
-    def connect_to_players(self, player_list):
+    def set_players(self, player_list):
 
         next_is_next = False
 
@@ -233,7 +231,7 @@ class Poker:
                     self.card_state["board"].append(
                         key_list_to_card(decode_key_lists(code_list[0], self.code_state["board"][4])))
 
-        # TODO Fabian Implement receiving cards
+        # TODO Implement receiving cards
 
     def player_action(self, action, chips, status) -> None:
         #  player_obj = self.players(player_name)
@@ -262,7 +260,7 @@ class Poker:
         self.check_open()
 
 
-    # TODO Fabian aufrufen
+    # TODO aufrufen
 
     def check_open(self):
 

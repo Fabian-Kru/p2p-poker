@@ -14,14 +14,15 @@ class Game:
     cards: list = []
     myself: Player = None
 
-    def __init__(self, game_id, own_name, dont_log=False) -> None:
+    def __init__(self, game_id, own_name, master, dont_log=False) -> None:
         if not dont_log:
             log("[game] Game created with id:", game_id)
         self.game_id = game_id
+        self.master = master
         self.myself = Player(own_name, self)
 
     def get_client_object(self):
-        g = Game(self.game_id, self.myself, True)
+        g = Game(self.game_id, self.myself, self.master, True)
         g.data = self.data
         g.is_master = False
         g.master = self.master
@@ -79,6 +80,11 @@ class Game:
             log("[game] action:call", name, chips, status)
         elif data.game_object == "new_round":
             self.myself.new_round()
+        elif data.game_object == "request:cards":
+            s = data.game_value.split(":")
+            name = s[0]
+            card = s[1]
+            log("[game] request:cards", name, card)
         else:
             log("[game] Unknown game update message", data.game_object)
 

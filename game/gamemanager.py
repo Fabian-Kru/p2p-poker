@@ -10,6 +10,7 @@ from util.logging import log
 
 
 class GameMaster:
+
     games: dict = {}  # game_id: {game: game_object,  poker: poker}
     node: Type['P2PNode'] = None
 
@@ -23,6 +24,9 @@ class GameMaster:
                 g = game["game"]
                 g.add_client_local(client)
                 break
+
+    def deliver_card_code(self, game, name: str, card_string: str) -> None:
+        self.handle_update(game.master, game.master, GameUpdateMessage(game, "request:cards", name+":"+card_string))
 
     def new_round(self, game) -> None:
         poker: Poker = self.games[game.game_id]["poker"]
@@ -41,7 +45,7 @@ class GameMaster:
         if self.node.name not in game.clients:
             self.games[game.game_id]["game"].add_client_local(self.node.name)
 
-        poker.connect_to_players(game.clients)
+        poker.set_players(game.clients)
         player_cards = poker.deal_cards()
 
         for player_name in player_cards.keys():
@@ -86,7 +90,7 @@ class GameMaster:
 
     def create_game(self, game_id: str) -> Game:
         print("[game] Hosting game with id:", game_id)
-        game = Game(game_id, self.node.name)
+        game = Game(game_id, self.node.name, self.node.name)
         game.set_master(self.node.name)
         game = self.add_game(game)
         poker = Poker(self, self.node.name, game)
