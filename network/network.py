@@ -8,6 +8,9 @@ from game.game import Game
 from game.gamemanager import GameMaster
 from network import network_util
 from network.client import P2PClient
+
+from tui.tui import Tui
+
 from util.logging import log
 
 if not TYPE_CHECKING:
