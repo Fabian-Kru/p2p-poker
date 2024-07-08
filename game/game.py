@@ -33,8 +33,6 @@ class Game:
 
     def update(self, data) -> None:
         self.data[data.game_object] = data.game_value
-        log("[game] >GameUpdateMessage received", data)
-        log("[game] Game state:", self.data)
 
         if data.game_object == "clients":
             self.clients = data.game_value

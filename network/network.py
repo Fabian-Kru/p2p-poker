@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, List
 
 from client import P2PClient
 from data.Message import Message
+from data.game.GameJoinMessage import GameJoinMessage
 from data.game.GameSearchMessage import GameSearchMessage
 from game.game import Game
 from game.gamemanager import GameMaster
@@ -18,10 +19,25 @@ class P2PNode:
     def __init__(self, _server_port: int, port: int) -> None:
         self.server = P2PServer(_server_port, self)
         self.clients: List[P2PClient] = []
+        self.open_games = []
         self.bp = port
         self.sp = _server_port
         self.name = "client-" + str(self.sp)
         self.game_master = GameMaster(self)  # shared between client and server to avoid sync problems
+
+    def add_game_search(self, game_search) -> None:
+        self.open_games.append(game_search)
+
+    def get_open_games(self) -> List[GameSearchMessage]:
+        return self.open_games
+
+    def join_game(self, game_search) -> None:
+        self.game_master.add_game(game_search.game)
+        game = self.game_master.get_or_add_game(game_search.game)
+        self.game_master.add_client(self.name, game)
+        asyncio.ensure_future(self.send_to_client(game_search.game.game_id, pickle.dumps(GameJoinMessage(game_search.game, self.name))))
+        log("[client] >GameJoinMessage sent", game_search.game, self.name)
+        self.open_games = []
 
     def has_connection(self, client_name: [str, None], port: int) -> bool:
         for c in self.clients:
@@ -99,7 +115,9 @@ class P2PNode:
 
         if command == "raise":
             result = (self.game_master
-                      .get_current_game().myself.poker_raise(1, current_bet=0, game_master=self.game_master))
+                      .get_current_game().myself
+                      .poker_raise(1, current_bet=self.game_master.get_current_poker().current_bet,
+                                   game_master=self.game_master))
             log("[server] Raise result:", result)
             return
 
@@ -110,13 +128,15 @@ class P2PNode:
 
         if command == "call":
             result = (self.game_master.get_current_game().myself
-                      .poker_call(current_bet=0, game_master=self.game_master))
+                      .poker_call(
+                current_bet=self.game_master.get_current_poker().current_bet,
+                game_master=self.game_master))
             log("[server] Call result:", result)
             return
 
         if command == "blinds":
             result = (self.game_master.get_current_game().myself
-                      .poker_blinds(chips=0,game_master=self.game_master))
+                      .poker_blinds(chips=0, game_master=self.game_master))
             log("[server] Blinds result:", result)
             return
 
