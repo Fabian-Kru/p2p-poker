@@ -24,6 +24,12 @@ class GameMaster:
                 g.add_client_local(client)
                 break
 
+    def new_round(self, game) -> None:
+        poker: Poker = self.games[game.game_id]["poker"]
+        poker.new_round()
+        for player in game.clients:
+            self.handle_update(player, player, GameUpdateMessage(game, "new_round", None))
+
     def start_game(self, game):
         if game.game_id not in self.games.keys():
             log("[game] Game not found!")

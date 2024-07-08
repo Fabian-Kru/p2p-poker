@@ -19,16 +19,6 @@ class Player:
         if not self.status == Actions.CHIP_LESS:
             self.status = Actions.PLAYING
 
-    def new_game(self) -> None:
-        """
-        Re-initializes the player for a new game.
-        :return:
-        """
-
-        self.chips = 1000
-        self.bet = 0
-        self.status = Actions.PLAYING
-
     def poker_raise(self, chips, current_bet, game_master) -> [Actions, int]:
         """
         Changes the player attributes for as if they raised during play.

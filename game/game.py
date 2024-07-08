@@ -77,7 +77,8 @@ class Game:
             status = int(s[1])
             chips = int(s[2])
             log("[game] action:call", name, chips, status)
-
+        elif data.game_object == "new_round":
+            self.myself.new_round()
         else:
             log("[game] Unknown game update message", data.game_object)
 

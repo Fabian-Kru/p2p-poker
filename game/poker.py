@@ -98,12 +98,9 @@ class Poker:
     def new_round(self):
         self.card_state = {}
         self.code_state = {}
-
         self.round = 0
         self.current_bet = 0
         self.open = False
-        for player_name in self.players:
-            player_name.new_round()
 
     def deal_cards(self):
         """
