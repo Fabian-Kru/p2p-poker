@@ -2,21 +2,21 @@ import asyncio
 import pickle
 from typing import TYPE_CHECKING, List
 
-from client import P2PClient
+from network.client import P2PClient
 from data.Message import Message
-from data.game.GameJoinMessage import GameJoinMessage
 from data.game.GameSearchMessage import GameSearchMessage
 from game.game import Game
 from game.gamemanager import GameMaster
 from util.logging import log
 
 if not TYPE_CHECKING:
-    from server import P2PServer
+    from network.server import P2PServer
 
 
 class P2PNode:
 
     def __init__(self, _server_port: int, port: int) -> None:
+        self.bootstrap_port = port
         self.server = P2PServer(_server_port, self)
         self.clients: List[P2PClient] = []
         self.open_games = []
@@ -30,14 +30,6 @@ class P2PNode:
 
     def get_open_games(self) -> List[GameSearchMessage]:
         return self.open_games
-
-    def join_game(self, game_search) -> None:
-        self.game_master.add_game(game_search.game)
-        game = self.game_master.get_or_add_game(game_search.game)
-        self.game_master.add_client(self.name, game)
-        asyncio.ensure_future(self.send_to_client(game_search.game.game_id, pickle.dumps(GameJoinMessage(game_search.game, self.name))))
-        log("[client] >GameJoinMessage sent", game_search.game, self.name)
-        self.open_games = []
 
     def has_connection(self, client_name: [str, None], port: int) -> bool:
         for c in self.clients:
@@ -63,7 +55,6 @@ class P2PNode:
         return self.server.known_client(receiver) or (True in [x.knows_client(receiver) for x in self.clients])
 
     async def send_to_client(self, client_name: str, message: bytes) -> None:
-
         # check if client knows client
         client = self.get_client_by_name(client_name)
 
@@ -91,7 +82,7 @@ class P2PNode:
             asyncio.ensure_future(c.send_message(message))
 
     async def run(self) -> None:
-        if bootstrap_port == -1:
+        if self.bootstrap_port == -1:
             await self.server.start(self, -1)
             return
         await asyncio.create_task(self.server.start(self, self.bp)),
@@ -99,7 +90,6 @@ class P2PNode:
     async def process_input(self, command: str) -> None:
 
         if command == "create_game":
-            # Send to all connected clients -> ttl of 1-2
             game = self.game_master.create_game("Game-" + str(self.sp))
             await self.server.broadcast_message(GameSearchMessage(ttl=2, sender=None, game=game.get_client_object()))
             return
@@ -110,7 +100,7 @@ class P2PNode:
             if game is None:
                 print("[server] Game not found")
                 return
-            self.game_master.start_game(game)
+            asyncio.ensure_future(self.game_master.start_game(game))
             return
 
         if command == "raise":
@@ -169,23 +159,3 @@ async def input_handler(_network) -> None:
     while True:
         command = await asyncio.get_event_loop().run_in_executor(None, input, "> ")
         await _network.process_input(command)
-
-
-if __name__ == "__main__":
-    server_port = int(input("Enter server_port: "))
-
-    if server_port == 1234:
-        bootstrap_port = -1
-    else:
-        bootstrap_port = 1234
-
-    if server_port == 5454:
-        bootstrap_port = -1
-
-    network = P2PNode(server_port, bootstrap_port)
-    loop = asyncio.new_event_loop()
-
-    loop.run_until_complete(asyncio.gather(
-        loop.create_task(network.run()),
-        loop.create_task(input_handler(network))
-    ))

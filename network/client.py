@@ -27,7 +27,7 @@ class P2PClient:
 
     async def receive_data(self, client_socket) -> None:
         while True:
-                response = await asyncio.to_thread(client_socket.recv, 60000)
+                response = await asyncio.to_thread(client_socket.recv, 70000)
                 if response:
                     data = pickle.loads(response)
 
@@ -44,16 +44,16 @@ class P2PClient:
                         log("[client] >GameSearchMessage received", data.game)
                         self.node.add_game_search(data.game.game_id)
 
-                        # TODO gjm -> game_master -> game_update -> all_clients
+                        self.node.game_master.add_game(data.game)
+                        game = self.node.game_master.get_or_add_game(data.game)
+                        game.add_client_local(self.name)
+                        await self.node.send_to_client(data.game.game_id, pickle.dumps(GameJoinMessage(data.game, self.name)))
+                        log("[client] >GameJoinMessage sent", data.game, self.name)
+
                         # update ttl and forward to ttl clients
                         updated_message = GameSearchMessage(data.ttl - 1, self.uid, data.game)
                         if updated_message.ttl > 0:  # only forward if ttl > 0
-                            asyncio.ensure_future(self.node.broadcast_message_with_ttl(updated_message, updated_message.ttl))
-                        s = input("join?")
-                        if s == "y":
-                            log("[client] >GameSearchMessage joining game", data.game)
-                            self.node.join_game(data)
-
+                            await self.node.broadcast_message_with_ttl(updated_message, updated_message.ttl)
                     elif isinstance(data, GameUpdateMessage):
                         game = self.node.game_master.get_or_add_game(data.game)
                         game.update(data)
@@ -63,10 +63,9 @@ class P2PClient:
                         self.node.game_master.add_client(data.player, game)
 
                         update_data = GameUpdateMessage(game, "clients", game.clients)
-                        # TODO gjm -> game_master -> game_update -> all_clients
-
                         for c in game.clients:
                             self.node.send_to_client(c, pickle.dumps(update_data))
+
                     elif isinstance(data, ForwardMessage):
                         log("[client] >ForwardMessage received", data.message)
                         if data.receiver == self.node.name:

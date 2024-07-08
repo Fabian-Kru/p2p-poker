@@ -58,7 +58,7 @@ class P2PServer:
         """
         request = None
         while request != 'quit':
-            request = await asyncio.get_event_loop().sock_recv(client, 60000)
+            request = await asyncio.get_event_loop().sock_recv(client, 70000)
 
             if client not in self.connections:
                 self.connections.append(client)
