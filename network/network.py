@@ -91,7 +91,7 @@ class P2PNode:
 
         if command == "create_game":
             game = self.game_master.create_game("Game-" + str(self.sp))
-            await self.server.broadcast_message(GameSearchMessage(ttl=2, sender=None, game=game.get_client_object()))
+            await self.server.broadcast_message(GameSearchMessage(ttl=2, sender=self.name, game=game.get_client_object()))
             return
 
         if command == "start_game":
@@ -100,7 +100,7 @@ class P2PNode:
             if game is None:
                 print("[server] Game not found")
                 return
-            asyncio.ensure_future(self.game_master.start_game(game))
+            self.game_master.start_game(game)
             return
 
         if command == "raise":

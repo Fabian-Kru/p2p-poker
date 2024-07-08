@@ -2,6 +2,7 @@ import asyncio
 import pickle
 import socket
 import traceback
+from asyncio import sleep
 
 from data.AnnouncePeerMessage import AnnouncePeerMessage
 from data.ClientMetaData import ClientMetaData
@@ -27,61 +28,61 @@ class P2PClient:
 
     async def receive_data(self, client_socket) -> None:
         while True:
-                response = await asyncio.to_thread(client_socket.recv, 70000)
-                if response:
-                    data = pickle.loads(response)
+            response = await asyncio.to_thread(client_socket.recv, 70000)
+            if not response:
+                log("[client] Connection closed")
+                client_socket.close()
+                break
 
-                    if isinstance(data, ClientMetaData):
-                        self.node.server.clients[client_socket.getpeername()] = data
-                        self.clients[client_socket.getpeername()] = data
+            data = pickle.loads(response)
 
-                    elif isinstance(data, AnnouncePeerMessage):
-                        log("[client] >Announce message received", data.known_connections, self.server.connections)
-                        for newPeers in data.known_connections:
-                            if self.node.connect_to_node("127.0.0.1", newPeers[1]):
-                                log("[client] Connecting to new peer", newPeers[1])
-                    elif isinstance(data, GameSearchMessage):
-                        log("[client] >GameSearchMessage received", data.game)
-                        self.node.add_game_search(data.game.game_id)
+            if isinstance(data, ClientMetaData):
+                self.node.server.clients[client_socket.getpeername()] = data
+                self.clients[client_socket.getpeername()] = data
 
-                        self.node.game_master.add_game(data.game)
-                        game = self.node.game_master.get_or_add_game(data.game)
-                        game.add_client_local(self.name)
-                        await self.node.send_to_client(data.game.game_id, pickle.dumps(GameJoinMessage(data.game, self.name)))
-                        log("[client] >GameJoinMessage sent", data.game, self.name)
+            elif isinstance(data, AnnouncePeerMessage):
+                log("[client] >Announce message received", data.known_connections, self.server.connections)
+                for newPeers in data.known_connections:
+                    if self.node.connect_to_node("127.0.0.1", newPeers[1]):
+                        log("[client] Connecting to new peer", newPeers[1])
+            elif isinstance(data, GameSearchMessage):
+                log("[client] >GameSearchMessage received", data.game)
+                self.node.add_game_search(data.game.game_id)
 
-                        # update ttl and forward to ttl clients
-                        updated_message = GameSearchMessage(data.ttl - 1, self.uid, data.game)
-                        if updated_message.ttl > 0:  # only forward if ttl > 0
-                            await self.node.broadcast_message_with_ttl(updated_message, updated_message.ttl)
-                    elif isinstance(data, GameUpdateMessage):
-                        game = self.node.game_master.get_or_add_game(data.game)
-                        game.update(data)
-                    elif isinstance(data, GameJoinMessage):
-                        log("[client] >GameJoinMessage received", data)
-                        game = self.node.game_master.get_or_add_game(data.game)
-                        self.node.game_master.add_client(data.player, game)
+                self.node.game_master.add_game(data.game)
+                game = self.node.game_master.get_or_add_game(data.game)
+                game.add_client_local(self.name)
+                await self.send_message(GameJoinMessage(data.game, self.name))
+                log("[client] >GameJoinMessage sent", data.game, self.name)
+                # update ttl and forward to ttl clients
+                updated_message = GameSearchMessage(data.ttl - 1, self.uid, data.game)
+                if updated_message.ttl > 0:  # only forward if ttl > 0
+                    await self.node.broadcast_message_with_ttl(updated_message, updated_message.ttl)
+            elif isinstance(data, GameUpdateMessage):
+                print("[client] >GameUpdateMessage received", data.game, data.game_object, data.game_value)
+                game = self.node.game_master.get_or_add_game(data.game)
+                game.update(data)
+            elif isinstance(data, GameJoinMessage):
+                log("[client] >GameJoinMessage received", data)
+                game = self.node.game_master.get_or_add_game(data.game)
+                self.node.game_master.add_client(data.player, game)
 
-                        update_data = GameUpdateMessage(game, "clients", game.clients)
-                        for c in game.clients:
-                            self.node.send_to_client(c, pickle.dumps(update_data))
+                update_data = GameUpdateMessage(game, "clients", game.clients)
+                for c in game.clients:
+                    self.node.send_to_client(c, pickle.dumps(update_data))
 
-                    elif isinstance(data, ForwardMessage):
-                        log("[client] >ForwardMessage received", data.message)
-                        if data.receiver == self.node.name:
-                            log("[client] >ForwardMessage received", data.message)
-                        elif self.node.knows_client(data.receiver):
-                            log("[client] >ForwardMessage forwarding", data.message)
-                            await self.node.send_to_client(data.receiver, data.message)
-                        else:
-                            log("[client] >ForwardMessage unknown receiver", data.receiver)
-
-                    else:
-                        log("[client] Received unknown: ", data)
+            elif isinstance(data, ForwardMessage):
+                log("[client] >ForwardMessage received", data.message)
+                if data.receiver == self.node.name:
+                    log("[client] >ForwardMessage received", data.message)
+                elif self.node.knows_client(data.receiver):
+                    log("[client] >ForwardMessage forwarding", data.message)
+                    await self.node.send_to_client(data.receiver, data.message)
                 else:
-                    log("[client] Connection closed")
-                    client_socket.close()
-                    break
+                    log("[client] >ForwardMessage unknown receiver", data.receiver)
+
+            else:
+                log("[client] Received unknown: ", data)
 
     def knows_client(self, client_name: str) -> bool:
         return client_name in [self.clients[x].name for x in self.clients]

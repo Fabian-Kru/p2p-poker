@@ -24,7 +24,7 @@ class GameMaster:
                 g.add_client_local(client)
                 break
 
-    async def start_game(self, game):
+    def start_game(self, game):
         if game.game_id not in self.games.keys():
             log("[game] Game not found!")
             return
@@ -41,12 +41,12 @@ class GameMaster:
         for player_name in player_cards.keys():
             print("[game] Dealing cards to:", player_name)
             update = GameUpdateMessage(game, "cards", player_cards[player_name])
-            await self.handle_update(player_name, player_name, update)
+            self.handle_update(player_name, player_name, update)
 
         for player_name in player_cards.keys():
-            await self.handle_update(player_name, player_name, GameUpdateMessage(game, "next_player", poker.next_player.name))
+            self.handle_update(player_name, player_name, GameUpdateMessage(game, "next_player", poker.next_player.name))
 
-    async def handle_update(self, receiver: [str, None], player_name: str, update: GameUpdateMessage) -> None:
+    def handle_update(self, receiver: [str, None], player_name: str, update: GameUpdateMessage) -> None:
 
         if receiver is not None:
             update.set_receiver(receiver)
@@ -67,7 +67,8 @@ class GameMaster:
         if player_name == self.node.name and (update.game.master != self.node.name):
             update.update_game_with_data()
         else:
-            await self.node.send_to_client(player_name, pickle.dumps(update))
+            print("sending to", player_name, update.game_object)
+            asyncio.ensure_future(self.node.send_to_client(player_name, pickle.dumps(update)))
 
     def update_games(self, game_id: str, key, value) -> None:
         for k, games in self.games.items():
