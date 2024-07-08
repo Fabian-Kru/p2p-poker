@@ -10,11 +10,7 @@ class Player:
         self.bet = 0
         self.status = Actions.PLAYING
 
-    def __str__(self):
-
-        return self.name
-
-    def new_round(self):
+    def new_round(self) -> None:
         self.bet = 0
         if self.chips == 0:
             self.status = Actions.CHIPLESS
@@ -22,10 +18,7 @@ class Player:
         if not self.status == Actions.CHIPLESS:
             self.status = Actions.PLAYING
 
-    def set_dealer(self):
-        self.status = Actions.DEALER
-
-    def new_game(self):
+    def new_game(self) -> None:
         """
         Re-initializes the player for a new game.
         :return:
@@ -35,7 +28,7 @@ class Player:
         self.bet = 0
         self.status = Actions.PLAYING
 
-    def poker_raise(self, chips, current_bet):
+    def poker_raise(self, chips, current_bet) -> [Actions, int]:
         """
         Changes the player attributes for as if they raised during play.
         :param chips: Amount of chips raised
@@ -58,7 +51,7 @@ class Player:
 
         return chips
 
-    def poker_blinds(self, chips):
+    def poker_blinds(self, chips) -> [Actions, int]:
         """
         Changes the player attributes for as if they paid the blind during play.
         :param chips: Size of the blind
@@ -81,7 +74,7 @@ class Player:
 
         return chips
 
-    def poker_fold(self):
+    def poker_fold(self) -> [Actions, int]:
         """
         Player change for folding
         :return:
@@ -94,10 +87,10 @@ class Player:
 
         return 0
 
-    def poker_check(self):
+    def poker_check(self) -> int:
         return 0
 
-    def poker_call(self, current_bet):
+    def poker_call(self, current_bet) -> [Actions, int]:
 
         if self.status != Actions.PLAYING:
             return Actions.ERROR_NOT_PLAYING
@@ -112,7 +105,7 @@ class Player:
 
         return chips
 
-    def available_actions(self, current_bet):
+    def available_actions(self, current_bet) -> list:
         action_list = []
 
         if self.status == Actions.PLAYING:
@@ -127,7 +120,7 @@ class Player:
 
         return action_list
 
-    def get_winnings(self, chips):
+    def get_winnings(self, chips) -> (int, bool):
 
         if self.bet <= chips:
             temp = self.bet
@@ -138,8 +131,8 @@ class Player:
             self.bet -= chips
             return chips, False
 
-    def is_my_socket(self, client_name):
+    def is_my_socket(self, client_name) -> bool:
         return self.name == client_name
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name + " " + str(self.chips) + " " + str(self.bet) + " " + str(self.status)
