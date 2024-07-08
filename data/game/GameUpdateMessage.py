@@ -5,14 +5,11 @@ GameUpdateMessage is used to update any game related content.
 """
 from typing import Optional, Type
 
-from game.game import Game
-
 
 class GameUpdateMessage:
-
     receiver = None
 
-    def __init__(self, game: Game, game_object: any, game_value: any) -> None:
+    def __init__(self, game, game_object: any, game_value: any) -> None:
         self.game = game
         self.game_object = game_object
         self.game_value = game_value

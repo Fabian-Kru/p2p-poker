@@ -3,7 +3,6 @@ import pickle
 from typing import TYPE_CHECKING, List
 
 from client import P2PClient
-from data.ForwardMessage import ForwardMessage
 from data.Message import Message
 from data.game.GameSearchMessage import GameSearchMessage
 from game.game import Game
@@ -96,6 +95,29 @@ class P2PNode:
                 print("[server] Game not found")
                 return
             self.game_master.start_game(game)
+            return
+
+        if command == "raise":
+            result = (self.game_master
+                      .get_current_game().myself.poker_raise(1, current_bet=0, game_master=self.game_master))
+            log("[server] Raise result:", result)
+            return
+
+        if command == "fold":
+            result = self.game_master.get_current_game().myself.poker_fold(self.game_master)
+            log("[server] Fold result:", result)
+            return
+
+        if command == "call":
+            result = (self.game_master.get_current_game().myself
+                      .poker_call(current_bet=0, game_master=self.game_master))
+            log("[server] Call result:", result)
+            return
+
+        if command == "blinds":
+            result = (self.game_master.get_current_game().myself
+                      .poker_blinds(chips=0,game_master=self.game_master))
+            log("[server] Blinds result:", result)
             return
 
         if command == "list":

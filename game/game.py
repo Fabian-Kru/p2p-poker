@@ -1,4 +1,3 @@
-from typing import Optional
 
 from game.player import Player
 from util.logging import log
@@ -19,7 +18,7 @@ class Game:
         if not dont_log:
             log("[game] Game created with id:", game_id)
         self.game_id = game_id
-        self.myself = Player(own_name)
+        self.myself = Player(own_name, self)
 
     def get_client_object(self):
         g = Game(self.game_id, self.myself, True)
@@ -46,9 +45,35 @@ class Game:
         elif data.game_object == "next_player":
             if data.game_value == self.myself.name:
                 log("[game] It's my turn")
-
             del self.data[data.game_object]
-
+        elif data.game_object == "action:raise":
+            s = data.game_value.split(":")
+            name = s[0]
+            chips = int(s[1])
+            status = int(s[2])
+            log("[game] action:raise", name, chips, status)
+        elif data.game_object == "action:fold":
+            s = data.game_value.split(":")
+            name = s[0]
+            status = int(s[1])
+            log("[game] action:fold", name, status)
+        elif data.game_object == "action:blinds":
+            s = data.game_value.split(":")
+            name = s[0]
+            chips = int(s[1])
+            status = int(s[2])
+            log("[game] action:blinds", name, chips, status)
+        elif data.game_object == "action:fold":
+            s = data.game_value.split(":")
+            name = s[0]
+            status = int(s[1])
+            log("[game] action:fold", name, status)
+        elif data.game_object == "action:call":
+            s = data.game_value.split(":")
+            name = s[0]
+            chips = int(s[1])
+            status = int(s[2])
+            log("[game] action:call", name, chips, status)
         else:
             log("[game] Unknown game update message", data.game_object)
 

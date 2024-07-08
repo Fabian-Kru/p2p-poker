@@ -71,7 +71,7 @@ class GameMaster:
         game = Game(game_id, self.node.name)
         game.set_master(self.node.name)
         game = self.add_game(game)
-        poker = Poker(self.node.name)
+        poker = Poker(self, self.node.name, game)
         # TODO add poker-game data only visible to game_master
         self.games[game_id]["poker"] = poker
         print(self.games[game_id].keys())
@@ -104,6 +104,5 @@ class GameMaster:
     def get_current_poker(self) -> Game:
         for k, game in self.games.items():
             return game["poker"]
-
 
 

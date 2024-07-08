@@ -80,9 +80,10 @@ def request_card_codes(card_string):
 
 class Poker:
 
-    def __init__(self, name):
-
+    def __init__(self, game_master, name, game):
+        self.game_master = game_master
         self.card_state = {}
+        self.game = game
         self.players = {}
         self.code_state = {}
         self.log = []
@@ -91,7 +92,6 @@ class Poker:
         self.name = name
         self.open = False
         self.current_bet = 0
-
         self.evaluator = treys.Evaluator()
 
     def new_round(self):
@@ -152,12 +152,12 @@ class Poker:
 
         for player_tuple in player_list:
             if player_tuple != self.name:
-                self.players[player_tuple] = player.Player(player_tuple)
+                self.players[player_tuple] = player.Player(player_tuple, self.game)
                 if next:
                     self.next_player = self.players[player_tuple]
                     next_is_next = False
             else:
-                self.players[player_tuple] = player.Player(player_tuple)
+                self.players[player_tuple] = player.Player(player_tuple, self.game)
                 next_is_next = True
 
         if next_is_next:
@@ -243,7 +243,7 @@ class Poker:
         chips = None
         if len(command_list) >= 3:
             chips = int(command_list[2])
-
+        # TODO call remote player actions
         match action:
             case "raise":
                 status = player_obj.poker_raise(chips, self.current_bet)
@@ -256,7 +256,7 @@ class Poker:
             case "fold":
                 status = player_obj.poker_fold()
             case "check":
-                status = 0 # for check -> next_player
+                status = 0  # for check -> next_player
             case "call":
                 status = player_obj.poker_call(self.current_bet)
             case _:
@@ -337,20 +337,3 @@ class Poker:
     def __str__(self):
         return "Poker: " + self.name + " " + str(self.players) + " " + str(self.card_state) + " " + str(self.code_state) + " " + str(self.round) + " " + str(self.next_player) + " " + str(self.open) + " " + str(self.current_bet) + " " + str(self.log)
 
-
-if __name__ == "__main__":
-
-    poker = Poker("game-1")
-
-    poker.connect_to_players(["p1", "p2", "p3"])
-
-    cd = poker.deal_cards()
-
-    poker.players["p1"].bet = 500
-    poker.players["p2"].bet = 400
-    poker.players["p3"].bet = 200
-
-    for place in poker.card_state:
-        Card.print_pretty_cards(poker.card_state[place])
-
-    poker.trigger_end()
