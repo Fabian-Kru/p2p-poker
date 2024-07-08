@@ -99,16 +99,6 @@ class P2PNode:
             self.game_master.start_game(game)
             return
 
-        if command == "test3":
-            self.connect_to_node("127.0.0.1", 5454)
-            return
-
-        if command == "test2":
-            fm = ForwardMessage(self.name, "client-5454", Message("message"), ttl=3)
-            print(fm)
-            await self.server.broadcast_message(fm)
-            return
-
         if command == "list":
             log("[server] own-name:", "client-" + str(self.sp))
             log("[server] clients:", [c.uid for c in self.clients])
@@ -117,6 +107,10 @@ class P2PNode:
 
         if command == "games":
             self.game_master.print_game()
+            return
+
+        if command == "poker" or command == "p":
+            log(self.game_master.get_current_poker())
             return
 
         if command.startswith("send"):

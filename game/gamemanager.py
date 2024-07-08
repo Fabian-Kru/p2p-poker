@@ -43,14 +43,21 @@ class GameMaster:
         for player_name in player_cards.keys():
             print("[game] Dealing cards to:", player_name, player_cards[player_name][player_name])
             update = GameUpdateMessage(game, "cards", player_cards[player_name][player_name])
-            update.set_receiver(player_name)
+            self.handle_update(player_name, player_name, update)
+        for player_name in player_cards.keys():
+            self.handle_update(player_name, player_name, GameUpdateMessage(game, "next_player", poker.next_player.name))
 
-            # send not to self
-            if player_name == self.node.name:
-                update.update_game_with_data()
-            else:
-                asyncio.ensure_future(
-                    self.node.send_to_client(player_name, pickle.dumps(update)))
+    def handle_update(self, receiver: [str, None], player_name: str, update: GameUpdateMessage) -> None:
+
+        if receiver is not None:
+            update.set_receiver(receiver)
+
+        # send not to self
+        if player_name == self.node.name:
+            update.update_game_with_data()
+        else:
+            asyncio.ensure_future(
+                self.node.send_to_client(player_name, pickle.dumps(update)))
 
     def update_games(self, game_id: str, key, value) -> None:
         for k, games in self.games.items():
@@ -90,5 +97,14 @@ class GameMaster:
             log(game["game"])
             log(game["poker"])
             log("----")
+
+    def get_current_game(self) -> Game:
+        for k, game in self.games.items():
+            return game["game"]
+
+    def get_current_poker(self) -> Game:
+        for k, game in self.games.items():
+            return game["poker"]
+
 
 

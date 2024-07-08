@@ -39,10 +39,17 @@ class Game:
         if data.game_object == "clients":
             self.clients = data.game_value
             del self.data[data.game_object]
-        if data.game_object == "cards":
+        elif data.game_object == "cards":
             self.cards = data.game_value
             del self.data[data.game_object]
+        elif data.game_object == "next_player":
+            if data.game_value == self.myself.name:
+                log("[game] It's my turn")
 
+            del self.data[data.game_object]
+
+        else:
+            log("[game] Unknown game update message", data.game_object)
 
     def set_master(self, name: str) -> None:
         self.is_master = True
