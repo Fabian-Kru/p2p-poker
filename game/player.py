@@ -55,7 +55,7 @@ class Player:
             game_master.handle_update(
                 None,
                 player,
-                GameUpdateMessage(self.game, "action:raise", self.name + ":" + str(chips) + ":" + str(self.status.value))
+                GameUpdateMessage(self.game, "action:raise", self.name + ":" + str(self.status.value) + ":" + str(chips))
             )
         return chips
 
@@ -84,7 +84,7 @@ class Player:
             game_master.handle_update(
                 None,
                 player,
-                GameUpdateMessage(self.game, "action:blinds", self.name + ":" + str(chips) + ":" + str(self.status.value))
+                GameUpdateMessage(self.game, "action:blinds", self.name + ":" + str(self.status.value) + ":" + str(chips))
             )
 
         return chips

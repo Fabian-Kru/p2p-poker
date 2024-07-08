@@ -1,3 +1,4 @@
+from util.logging import log
 import treys
 from treys import Card, Deck
 import math
@@ -150,14 +151,14 @@ class Poker:
 
         next_is_next = False
 
-        for player_tuple in player_list:
-            if player_tuple != self.name:
-                self.players[player_tuple] = player.Player(player_tuple, self.game)
+        for player_name in player_list:
+            if player_name != self.name:
+                self.players[player_name] = player.Player(player_name, self.game)
                 if next:
-                    self.next_player = self.players[player_tuple]
+                    self.next_player = self.players[player_name]
                     next_is_next = False
             else:
-                self.players[player_tuple] = player.Player(player_tuple, self.game)
+                self.players[player_name] = player.Player(player_name, self.game)
                 next_is_next = True
 
         if next_is_next:
@@ -237,41 +238,32 @@ class Poker:
 
         # TODO Fabian Implement receiving cards
 
-    def player_action(self, command_list):
-        player_obj = self.players(command_list[0])
-        action = command_list[1]
-        chips = None
-        if len(command_list) >= 3:
-            chips = int(command_list[2])
-        # TODO call remote player actions
+    def player_action(self, action, chips, status) -> None:
+        #  player_obj = self.players(player_name)
+        log("Player action: ", action, chips, status)
         match action:
             case "raise":
-                status = player_obj.poker_raise(chips, self.current_bet)
+                #  status = player_obj.poker_raise(chips, self.current_bet)
                 if status >= 0:
                     self.current_bet += status
             case "blinds":
-                status = player_obj.poker_blinde(chips)
+                #  status = player_obj.poker_blinde(chips)
                 if chips > self.current_bet:
                     self.current_bet = chips
-            case "fold":
-                status = player_obj.poker_fold()
+            #  case "fold":
+                # status = player_obj.poker_fold()
             case "check":
                 status = 0  # for check -> next_player
-            case "call":
-                status = player_obj.poker_call(self.current_bet)
+                #  case "call":
+                #   status = player_obj.poker_call(self.current_bet)
             case _:
                 status = Actions.ERROR_ACTION_NOT_FOUND
 
         if self.active_players() == 1:
             self.trigger_end()
 
-        if status >= 0:
-            self.log.append(" ".join(command_list + [str(status)]))
-            print(" ".join(command_list))
-
         self.check_open()
 
-        return status
 
     # TODO Fabian aufrufen
 
@@ -280,7 +272,7 @@ class Poker:
         playing_num = 0
         in_game_num = 0
 
-        for player_obj in self.players:
+        for name, player_obj in self.players.items():
             if player_obj.status == Actions.PLAYING:
                 playing_num += 1
                 in_game_num += 1
@@ -327,13 +319,14 @@ class Poker:
             self.players[winner].chips += winnings
 
     def active_players(self):
-        n = 0
-        for player_obj in self.players:
-            if player_obj.status == Actions.PLAYING or player_obj.status == Actions.ALL_IN:
-                n += 1
-
-        return n
+       # n = 0
+       # for player_obj in self.players:
+       #     if player_obj.status == Actions.PLAYING or player_obj.status == Actions.ALL_IN:
+       #         n += 1
+        # TODO Bin mir nicht sicher obs gleich ist, aber
+        return len(self.game.clients)
 
     def __str__(self):
-        return "Poker: " + self.name + " " + str(self.players) + " " + str(self.card_state) + " " + str(self.code_state) + " " + str(self.round) + " " + str(self.next_player) + " " + str(self.open) + " " + str(self.current_bet) + " " + str(self.log)
-
+        return "Poker: " + self.name + " " + str(self.players) + " " + str(self.card_state) + " " + str(
+            self.code_state) + " " + str(self.round) + " " + str(self.next_player) + " " + str(self.open) + " " + str(
+            self.current_bet) + " " + str(self.log)

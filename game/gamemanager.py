@@ -51,8 +51,20 @@ class GameMaster:
         if receiver is not None:
             update.set_receiver(receiver)
 
+        if update.game.master == self.node.name and (player_name == self.node.name):  # master
+            poker: Poker = self.games[update.game.game_id]["poker"]
+            chips = 0
+            status = 0
+            match update.game_object:
+                case "action:raise":
+                    poker.player_action("raise", chips, status)
+                case "action:blinds":
+                    poker.player_action("blinds", chips, status)
+                case "action:check":
+                    poker.player_action("check", chips, status)
+
         # send not to self
-        if player_name == self.node.name:
+        if player_name == self.node.name and (update.game.master != self.node.name):
             update.update_game_with_data()
         else:
             asyncio.ensure_future(
