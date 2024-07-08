@@ -2,6 +2,8 @@ from data.game.GameUpdateMessage import GameUpdateMessage
 from game.game_util import Actions
 from util.logging import log
 
+from tui.tui import Tui
+
 
 class Game:
 
@@ -44,6 +46,7 @@ class Game:
             self.poker.set_players(self.clients)
             log("[game] Players updated", self.clients)
             del self.data[data.game_object]
+            Tui.get_tui().create_game(True)
         elif data.game_object == "cards":
             self.poker.code_state = data.game_value
             del self.data[data.game_object]

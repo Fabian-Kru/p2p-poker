@@ -3,11 +3,24 @@ import pytermgui as ptg
 
 from pytermgui import Container, Splitter, Window, InputField
 
-from data.game.GameSearchMessage import GameSearchMessage
+import data.game
 from game.player import Player
 
 
 class Tui:
+    active_tui = None
+
+    @staticmethod
+    def create_tui(node: 'P2PNode'):
+        global active_tui
+        active_tui = Tui(node)
+        return active_tui
+
+    @staticmethod
+    def get_tui():
+        global active_tui
+        return active_tui
+
     def __init__(self, node: 'P2PNode') -> None:
         CONFIG = """
         config:
@@ -119,7 +132,11 @@ class Tui:
                 player_list.append(player)
         else:
             game = self.node.game_master.create_game("Game-" + str(self.node.sp))
-            asyncio.ensure_future(self.node.server.broadcast_message(GameSearchMessage(ttl=2, sender=None, game=game.get_client_object())))
+            # that's a horrible solution
+            # but I'm to lazy at this point
+            asyncio.ensure_future(self.node.server.broadcast_message(
+                data.game.GameSearchMessage.GameSearchMessage(ttl=2, sender=None, game=game.get_client_object()))
+            )
 
         with ptg.WindowManager() as manager:
             window = (
