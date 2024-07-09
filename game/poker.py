@@ -112,8 +112,7 @@ class Poker:
         :return: the generated dictionary
         """
 
-        self.players[self.name].status = Actions.DEALER
-
+        # TODO self.players[self.name].status = Actions.DEALER
 
         self.card_state = {}
         deck = Deck()
@@ -266,7 +265,8 @@ class Poker:
                         p,
                         p,
                         GameUpdateMessage(game, "action:raise",
-                                          player_name + ":" + str(chips) + ":" + str(self.current_bet) + ":" + str(old_bet))
+                                          player_name + ":" + str(chips) + ":" + str(self.current_bet) + ":" + str(
+                                              old_bet))
                     )
             case "blinds":
                 print("blinds")
@@ -338,18 +338,17 @@ class Poker:
                     game_master.handle_update(
                         p,
                         p,
-                        GameUpdateMessage(game, "next_player", next_player + ":" +
-                                          str("check" in self.players[next_player].available_actions(self.current_bet) and self.players[next_player].played))
-                    )
+                        GameUpdateMessage(game, "next_player", next_player))
                 break
 
+        if ("check" in self.players[next_player].available_actions(self.current_bet)
+                and self.players[next_player].played):
 
-      #  for p in game.poker.players:
-      #      game_master.handle_update(
-      #          p,
-      #          p,
-      #          GameUpdateMessage(game, "next_round", next_player)
-      #      )
+            for p in game.poker.players:
+                game_master.handle_update(
+                    p,
+                    p,
+                    GameUpdateMessage(game, "next_round", next_player))
 
         if self.get_active_player_number() == 1:
             self.trigger_end()

@@ -1,12 +1,11 @@
-import asyncio
 import pickle
 from typing import TYPE_CHECKING, List
 
-from network.client import P2PClient
 from data.Message import Message
 from data.game.GameSearchMessage import GameSearchMessage
 from game.game import Game
 from game.gamemanager import GameMaster
+from network.client import P2PClient
 from util.logging import log
 
 if not TYPE_CHECKING:
@@ -44,7 +43,7 @@ class P2PNode:
             return False
         c = P2PClient(self, port, "client-" + str(self.sp))
         self.clients.append(c)
-        asyncio.ensure_future(c.connect_to_socket())
+        c.connect_to_socket()
         return True
 
     def get_client_by_name(self, name: str) -> [P2PClient, None]:
@@ -56,40 +55,46 @@ class P2PNode:
     def knows_client(self, receiver: str) -> bool:
         return self.server.known_client(receiver) or (True in [x.knows_client(receiver) for x in self.clients])
 
-    async def send_to_client(self, client_name: str, message: bytes) -> None:
+    def send_to_client(self, client_name: str, message: bytes) -> None:
         # check if client knows client
         client = self.get_client_by_name(client_name)
 
         if client is not None:
-            asyncio.ensure_future(client.send_message(message))
+            client.send_message(message)
             return
 
         if self.server.known_client(client_name):
             if not isinstance(message, (bytes, bytearray)):
                 message = pickle.dumps(message, protocol=None)
-            asyncio.ensure_future(self.server.send_to_client(client_name, message))
+            self.server.send_to_client(client_name, message)
             return
 
-    async def broadcast_message_with_ttl(self, message: str, ttl: int) -> None:
+    def broadcast_message_with_ttl(self, message: str, ttl: int) -> None:
         for i, client in enumerate(self.clients):
             if i < ttl:
-                asyncio.ensure_future(client.send_message(message))
+                client.send_message(message)
 
-    async def broadcast_message(self, message: str) -> None:
+    def broadcast_message(self, message: str) -> None:
         for c in self.clients:
-            asyncio.ensure_future(c.send_message(message))
+            c.send_message(message)
 
-    async def run(self) -> None:
+    def run(self) -> None:
         if self.bootstrap_port == -1:
-            await self.server.start(self, -1)
+            self.server.start(self, -1)
             return
-        await asyncio.create_task(self.server.start(self, self.bp)),
+        self.server.start(self, self.bp)
 
-    async def process_input(self, command: str) -> None:
+    def process_input(self) -> None:
+        while True:
+            command = input(">")
+            print("[server] Received command:", command)
+            self.__process_input(command)
+
+    def __process_input(self, command: str) -> None:
 
         if command == "create_game":
             game = self.game_master.create_game("Game-" + str(self.sp))
-            await self.server.broadcast_message(GameSearchMessage(ttl=2, sender=self.name, game=game.get_client_object()))
+            self.server.broadcast_message(GameSearchMessage(ttl=2, sender=self.name, game=game.get_client_object()))
             return
 
         if command == "start_game":
@@ -171,11 +176,8 @@ class P2PNode:
                 return
             client_name = parts[1]
             message = " ".join(parts[2:])
-            await self.send_to_client(client_name, pickle.dumps(Message(message), protocol=None))
+            self.send_to_client(client_name, pickle.dumps(Message(message), protocol=None))
             return
+        print("Unknown command")
 
 
-async def input_handler(_network) -> None:
-    while True:
-        command = await asyncio.get_event_loop().run_in_executor(None, input, "> ")
-        await _network.process_input(command)

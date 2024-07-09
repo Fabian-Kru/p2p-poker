@@ -1,4 +1,3 @@
-import asyncio
 import pickle
 from typing import Type
 
@@ -78,7 +77,7 @@ class GameMaster:
         if player_name == self.node.name and (update.game.master != self.node.name):
             update.update_game_with_data(self.node.game_master)
         else:
-            asyncio.ensure_future(self.node.send_to_client(player_name, pickle.dumps(update, protocol=None)))
+            self.node.send_to_client(player_name, pickle.dumps(update, protocol=None))
 
     def update_games(self, game_id: str, key, value) -> None:
         for k, games in self.games.items():

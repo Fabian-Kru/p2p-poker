@@ -1,15 +1,15 @@
-import asyncio
 import pickle
 import socket
+import threading
 from typing import TYPE_CHECKING
 
+from data import Message
+from data.AnnouncePeerMessage import AnnouncePeerMessage
+from data.ClientMetaData import ClientMetaData
 from data.ForwardMessage import ForwardMessage
 from data.game.GameJoinMessage import GameJoinMessage
 from data.game.GameUpdateMessage import GameUpdateMessage
 from util.logging import log
-from data import Message
-from data.AnnouncePeerMessage import AnnouncePeerMessage
-from data.ClientMetaData import ClientMetaData
 
 if TYPE_CHECKING:
     from network.network import P2PNode
@@ -36,21 +36,22 @@ class P2PServer:
         self.port = port  # system will pick a random port, if port == 0
         self.node = node
 
-    async def start(self, node: 'P2PNode', bp: int) -> None:
+    def start(self, node: 'P2PNode', bp: int) -> None:
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((self.host, self.port))
         self.node.sp = self.server.getsockname()[1]
         self.port = self.server.getsockname()[1]
         self.server.listen()
-        self.server.setblocking(False)
+        self.server.setblocking(True)
         log("[server] Started on port:", self.server.getsockname()[1])
         if bp != -1:
             node.connect_to_node("127.0.0.1", bp)
         while True:
-            client, _ = await asyncio.get_event_loop().sock_accept(self.server)
-            asyncio.ensure_future(self.__handle_client(client))  # ensure_future -> run in background
+            client, _ = self.server.accept()
+           # asyncio.ensure_future(self.__handle_client(client))  # ensure_future -> run in background
+            threading.Thread(target=self.__handle_client, args=(client,)).start()
 
-    async def __handle_client(self, client: socket):
+    def __handle_client(self, client: socket):
         """
         Handle client connection
         clients are incoming_connections stored in clients
@@ -58,7 +59,7 @@ class P2PServer:
         """
         request = None
         while request != 'quit':
-            request = await asyncio.get_event_loop().sock_recv(client, 90000)
+            request = client.recv(90000)
 
             if client not in self.connections:
                 self.connections.append(client)
@@ -98,7 +99,7 @@ class P2PServer:
             elif isinstance(o, ForwardMessage):
                 log("[server] >ForwardMessage received", o.message)
                 if self.node.knows_client(o.receiver):
-                    await self.node.send_to_client(o.receiver, o.message)
+                    self.node.send_to_client(o.receiver, o.message)
 
             else:
                 log(f"[server] Unknown object received {o}")
@@ -108,7 +109,7 @@ class P2PServer:
     def known_client(self, client_name: str) -> bool:
         return client_name in [self.clients[x].name for x in self.clients]
 
-    async def send_to_client(self, client_name, message) -> None:
+    def send_to_client(self, client_name, message) -> None:
         for client in self.connections:
             if self.clients[client.getpeername()].name == client_name:
                 if isinstance(message, (bytes, bytearray)):
@@ -117,10 +118,10 @@ class P2PServer:
                     client.send(pickle.dumps(message))
                 break
 
-    async def broadcast_message(self, message) -> None:
+    def broadcast_message(self, message) -> None:
 
         if isinstance(message, GameUpdateMessage) and message.receiver is not None:
-            await self.send_to_client(message.receiver, message)
+            self.send_to_client(message.receiver, message)
             return
         for client in self.connections:
-            await self.node.send_to_client(self.clients[client.getpeername()].name, message)
+            self.node.send_to_client(self.clients[client.getpeername()].name, message)

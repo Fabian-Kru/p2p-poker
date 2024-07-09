@@ -50,18 +50,15 @@ class Game:
             print("code_state")
             del self.data[data.game_object]
         elif data.game_object == "next_player":
-            s = data.game_value.split(":")
-            name = s[0]
-            nex_round = bool(s[1])
-            print("next_player", name, str(nex_round))
-            self.poker.next_player = self.poker.players[name]
-
-            if nex_round:
-                self.poker.next_round()
-            if name == self.own_name:
+            print("next_player", data.game_value)
+            self.poker.next_player = self.poker.players[data.game_value]
+            if data.game_value == self.own_name:
                 log("[game] It's my turn")
             del self.data[data.game_object]
-
+        elif data.game_object == "next_round":
+            print("next_round", data.game_value)
+            self.poker.next_round()
+            del self.data[data.game_object]
         elif data.game_object == "action:raise":
             s = data.game_value.split(":")
             name = s[0]

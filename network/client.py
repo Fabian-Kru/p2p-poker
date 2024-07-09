@@ -1,9 +1,6 @@
-import asyncio
 import pickle
 import socket
-import struct
-import traceback
-from asyncio import sleep
+import threading
 
 from data.AnnouncePeerMessage import AnnouncePeerMessage
 from data.ClientMetaData import ClientMetaData
@@ -27,10 +24,10 @@ class P2PClient:
         self.clients = {}
         log(f"[client] Started {self.name}. Connecting to 127.0.0.1:{self.port}")
 
-    async def receive_data(self, client_socket) -> None:
+    def receive_data(self, client_socket) -> None:
         while True:
 
-            response = await asyncio.to_thread(client_socket.recv, 90000)
+            response = client_socket.recv(90000)
 
             # TODO recv need to be fixed, adjust buffer-size
             # see: https://github.com/vijendra1125/Python-Socket-Programming/blob/master/server.py
@@ -58,12 +55,12 @@ class P2PClient:
                 self.node.game_master.add_game(data.game)
                 game = self.node.game_master.get_or_add_game(data.game)
                 game.add_client_local(self.name)
-                await self.send_message(GameJoinMessage(data.game, self.name))
+                self.send_message(GameJoinMessage(data.game, self.name))
                 log("[client] >GameJoinMessage sent", data.game, self.name)
                 # update ttl and forward to ttl clients
                 updated_message = GameSearchMessage(data.ttl - 1, self.uid, data.game)
                 if updated_message.ttl > 0:  # only forward if ttl > 0
-                    await self.node.broadcast_message_with_ttl(updated_message, updated_message.ttl)
+                    self.node.broadcast_message_with_ttl(updated_message, updated_message.ttl)
             elif isinstance(data, GameUpdateMessage):
                 print("[client] >GameUpdateMessage received", data.game.game_id, data.game_object, data.game_value)
                 game = self.node.game_master.get_or_add_game(data.game)
@@ -79,7 +76,7 @@ class P2PClient:
                     log("[client] >ForwardMessage received", data.message)
                 elif self.node.knows_client(data.receiver):
                     log("[client] >ForwardMessage forwarding", data.message)
-                    await self.node.send_to_client(data.receiver, data.message)
+                    self.node.send_to_client(data.receiver, data.message)
                 else:
                     log("[client] >ForwardMessage unknown receiver", data.receiver)
 
@@ -89,18 +86,17 @@ class P2PClient:
     def knows_client(self, client_name: str) -> bool:
         return client_name in [self.clients[x].name for x in self.clients]
 
-    async def send_message(self, message) -> None:
+    def send_message(self, message) -> None:
         if not isinstance(message, (bytes, bytearray)):
             message = pickle.dumps(message, protocol=None)
         self.client.sendall(message)
 
-    async def connect_to_socket(self) -> None:
+    def connect_to_socket(self) -> None:
         if self.port == -1:
             log("[client] Cannot connect to bootstrap server")
             return
         client_socket = socket.socket()
         client_socket.connect((self.host, self.port))
         self.client = client_socket
-        asyncio.ensure_future(self.receive_data(client_socket))
-        await self.send_message(pickle.dumps(ClientMetaData(self.uid, self.server.port), protocol=None))
-        await asyncio.sleep(1)
+        threading.Thread(target=self.receive_data, args=(client_socket,)).start()
+        self.send_message(pickle.dumps(ClientMetaData(self.uid, self.server.port), protocol=None))
