@@ -15,7 +15,8 @@ if server_port == 5454:
     bootstrap_port = -1
 
 network = P2PNode(server_port, bootstrap_port)
-Tui(network).open_main()
+
+Tui.create_tui(network).open_main()
 
 try:
     input_thread = threading.Thread(target=network.process_input)

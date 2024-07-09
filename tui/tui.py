@@ -62,7 +62,7 @@ class Tui:
                         ["Find Games", lambda *_: self.find_games()],
                         ["Help", lambda *_: self.open_help()],
                         ["Exit", lambda *_: exit(0)],
-                        ["bla", lambda *_: self.draw_game(["open1, open2"], ["yours1", "yours2"], 100, 10, 1000)]
+#                        ["bla", lambda *_: self.draw_game(["open1, open2"], ["yours1", "yours2"], 100, 10, 1000)]
                     ),
                     width=100,
                     box="DOUBLE",
@@ -100,11 +100,10 @@ class Tui:
     # TODO
     def find_games(self):
         # ToDo: Add Method to get all open games
-        games = ["A", "B", "C", "Kekse"]
         game_buttons = []
-        for game in games:
+        for game_id in self.node.get_open_games():
             game_buttons.append(
-                [game, lambda *_: print("Start " + game)])  # ToDo: Instead of print add the join function
+                [game_id, lambda *_: print("Start " + game_id)])
 
         with ptg.WindowManager() as manager:
             window = (
