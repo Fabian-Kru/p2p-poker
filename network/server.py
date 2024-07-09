@@ -58,7 +58,7 @@ class P2PServer:
         """
         request = None
         while request != 'quit':
-            request = await asyncio.get_event_loop().sock_recv(client, 70000)
+            request = await asyncio.get_event_loop().sock_recv(client, 90000)
 
             if client not in self.connections:
                 self.connections.append(client)
@@ -69,6 +69,7 @@ class P2PServer:
                 del self.clients[client.getpeername()]
                 self.connections.remove(client)
                 break
+
             o = pickle.loads(request)  # deserialize object
 
             if isinstance(o, ClientMetaData):
@@ -89,7 +90,7 @@ class P2PServer:
             elif isinstance(o, GameUpdateMessage):
                 print("[server] >GameUpdateMessage received", o.game.game_id, o.game_object, o.game_value)
                 game = self.node.game_master.get_or_add_game(o.game)
-                game.update(o)
+                game.update(o, self.node.game_master)
             elif isinstance(o, GameJoinMessage):
                 log("[server] >GameJoinMessage received", o)
                 game = self.node.game_master.get_or_add_game(o.game)

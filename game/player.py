@@ -8,6 +8,10 @@ class Player:
         self.chips = 1000
         self.bet = 0
         self.status = Actions.PLAYING
+        self.played = False
+
+    def next_round(self):
+        self.played = False
 
     def new_round(self) -> None:
         self.bet = 0
@@ -18,13 +22,14 @@ class Player:
             self.status = Actions.PLAYING
 
     def poker_raise(self, chips, current_bet) -> [Actions, int]:
+        self.played = True
         """
         Changes the player attributes for as if they raised during play.
         :param current_bet: Amount of chips bet
         :param chips: Amount of chips raised
         :return: Returns the amount of chips or an Error if the raise is not possible.
         """
-
+        print("current_bet", current_bet, "chips", chips)
         if self.status != Actions.PLAYING:
             return Actions.ERROR_NOT_PLAYING
 
@@ -77,7 +82,12 @@ class Player:
 
         return 0
 
+    def poker_check(self):
+        self.played = True
+        return 0
+
     def poker_call(self, current_bet) -> [Actions, int]:
+        self.played = True
 
         if self.status != Actions.PLAYING:
             return Actions.ERROR_NOT_PLAYING

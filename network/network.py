@@ -2,6 +2,7 @@ import asyncio
 import pickle
 from typing import TYPE_CHECKING, List
 
+from data.game.GameUpdateMessage import GameUpdateMessage
 from network.client import P2PClient
 from data.Message import Message
 from data.game.GameSearchMessage import GameSearchMessage
@@ -23,7 +24,8 @@ class P2PNode:
         self.bp = port
         self.sp = _server_port
         self.name = "client-" + str(self.sp)
-        self.game_master = GameMaster(self)  # shared between client and server to avoid sync problems
+        GameMaster.create_master(self)
+        self.game_master = GameMaster.get_master()  # shared between client and server to avoid sync problems
 
     def add_game_search(self, game_search) -> None:
         self.open_games.append(game_search)
@@ -100,6 +102,16 @@ class P2PNode:
             self.game_master.start_game(game)
             return
 
+        if command == "cards":
+            print("[server] Requesting cards")
+            for player in self.game_master.get_current_game().poker.players:
+                self.game_master.handle_update(
+                    player,
+                    player,
+                    GameUpdateMessage(self.game_master.get_current_game(), "next_round", "next_player")
+                )
+            return
+
         if command == "raise":
             print("client-" + str(self.sp))
             result = (self.game_master
@@ -107,6 +119,15 @@ class P2PNode:
                       .poker
                       .player_action(self.game_master, self.game_master.get_current_game(), "client-" + str(self.sp), "raise", 10))
             log("[server] Raise result:", result)
+            return
+
+        if command == "check":
+            result = (self.game_master
+                      .get_current_game()
+                      .poker
+                      .player_action(self.game_master, self.game_master.get_current_game(), "client-" + str(self.sp),
+                                     "check", 0))
+            log("[server] Check result:", result)
             return
 
         if command == "fold":

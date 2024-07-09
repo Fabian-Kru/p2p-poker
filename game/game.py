@@ -1,4 +1,4 @@
-
+from data.game.GameUpdateMessage import GameUpdateMessage
 from util.logging import log
 
 
@@ -36,7 +36,7 @@ class Game:
         if client not in self.clients:
             self.clients.append(client)
 
-    def update(self, data) -> None:
+    def update(self, data, game_master) -> None:
         self.data[data.game_object] = data.game_value
 
         if data.game_object == "clients":
@@ -46,27 +46,29 @@ class Game:
             del self.data[data.game_object]
         elif data.game_object == "cards":
             self.cards = data.game_value
+            self.poker.code_state = self.cards
+            print("code_state")
             del self.data[data.game_object]
         elif data.game_object == "next_player":
             self.poker.next_player = self.poker.players[data.game_value]
-            print("[game] Next player is", data.game_value)
             if data.game_value == self.own_name:
                 log("[game] It's my turn")
-                # TODO send next_player in list that he is the next player (after own game_action)
             del self.data[data.game_object]
 
         elif data.game_object == "action:raise":
             s = data.game_value.split(":")
             name = s[0]
             chips = int(s[1])
-            old_bet = int(s[2])
+            current_bet = int(s[2])
+            old_bet = int(s[3])
 
             if name == self.own_name:
                 return
-            print(name, self.own_name)
-
+            print(name, chips, current_bet, old_bet)
             result = self.poker.players[name].poker_raise(chips, old_bet)
-            log("[game] action:raise", name, chips, "result=", result)
+            self.poker.current_bet = current_bet
+
+            log("[game] action:raise", name, chips, "result=", result, "old_bet=", old_bet)
 
         elif data.game_object == "action:fold":
             s = data.game_value.split(":")
@@ -100,19 +102,24 @@ class Game:
             self.poker.players[name].poker_call(self.poker.current_bet)
             log("[game] action:call", name, chips, status)
         elif data.game_object == "action:check":
-            s = data.game_value.split(":")
-            name = s[0]
-            status = int(s[1])
-            chips = int(s[2])
-            log("[game] action:check", name, chips, status)
+            self.poker.players[data.game_value].poker_check()
+            log("[game] action:check", data.game_value)
         elif data.game_object == "new_round":
             self.poker.new_round()
-        elif data.game_object == "request:cards":
+        elif data.game_object == "get:cards":
             s = data.game_value.split(":")
-            name = s[0]
-            card = s[1]
-            log("[game] request:cards", name, card)
-            #poker.get_card_codes -> poker.receive_card_codes
+            card_string = s[0]
+            client_name = s[1]
+            to_send = self.poker.get_card_codes(card_string, client_name)
+            game_master.handle_update(client_name, client_name, GameUpdateMessage(self, "receive:cards", to_send + [card_string]))
+        elif data.game_object == "receive:cards":
+            l = data.game_value
+            card_string = l.pop(-1)
+            self.poker.receive_card_codes(card_string, l)
+            log("[game] receive:cards", card_string, l)
+        elif data.game_object == "next_round":
+            self.poker.next_round()
+            log("[game] next_round")
         else:
             log("[game] Unknown game update message", data.game_object)
 

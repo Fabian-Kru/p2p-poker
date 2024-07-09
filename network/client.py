@@ -28,7 +28,7 @@ class P2PClient:
 
     async def receive_data(self, client_socket) -> None:
         while True:
-            response = await asyncio.to_thread(client_socket.recv, 70000)
+            response = await asyncio.to_thread(client_socket.recv, 90000)
             if not response:
                 log("[client] Connection closed")
                 client_socket.close()
@@ -61,7 +61,7 @@ class P2PClient:
             elif isinstance(data, GameUpdateMessage):
                 print("[client] >GameUpdateMessage received", data.game.game_id, data.game_object, data.game_value)
                 game = self.node.game_master.get_or_add_game(data.game)
-                game.update(data)
+                game.update(data, self.node.game_master)
             elif isinstance(data, GameJoinMessage):
                 log("[client] >GameJoinMessage received", data)
                 game = self.node.game_master.get_or_add_game(data.game)

@@ -17,8 +17,8 @@ class GameUpdateMessage:
     def set_receiver(self, receiver: Type) -> None:
         self.receiver = receiver
 
-    def update_game_with_data(self) -> None:
-        self.game.update(self)
+    def update_game_with_data(self, game_manager) -> None:
+        self.game.update(self, game_manager)
 
     def __str__(self):
         return "GameUpdateMessage: " + str(self.game) + " " + str(self.game_object) + " " + str(self.game_value)
