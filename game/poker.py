@@ -112,12 +112,17 @@ class Poker:
         :return: the generated dictionary
         """
 
+        self.players[self.name].status = Actions.DEALER
+
+
         self.card_state = {}
         deck = Deck()
 
         self.card_state["board"] = deck.draw(5)
-        for player_obj in self.players:
-            self.card_state[player_obj] = deck.draw(2)
+
+        #TODO Change to get_active_players()
+        for player_name in self.players:
+            self.card_state[player_name] = deck.draw(2)
 
         key_dict = {}
 
@@ -346,7 +351,7 @@ class Poker:
       #          GameUpdateMessage(game, "next_round", next_player)
       #      )
 
-        if self.active_players() == 1:
+        if self.get_active_player_number() == 1:
             self.trigger_end()
 
         self.check_open()
@@ -405,12 +410,16 @@ class Poker:
 
             self.players[winner].chips += winnings
 
-    def active_players(self):
-        n = 0
+    def get_active_player_number(self):
+        return len(self.get_active_players())
+
+    def get_active_players(self):
+        list = []
         for name, player_obj in self.players.items():
             if player_obj.status == Actions.PLAYING or player_obj.status == Actions.ALL_IN:
-                n += 1
-        return n
+                list.append(name)
+
+        return list
 
     def __str__(self):
         return "Poker: " + self.name + " \nPlayers:" + '\n'.join(
