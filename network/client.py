@@ -1,6 +1,7 @@
 import asyncio
 import pickle
 import socket
+import struct
 import traceback
 from asyncio import sleep
 
@@ -28,13 +29,18 @@ class P2PClient:
 
     async def receive_data(self, client_socket) -> None:
         while True:
+
             response = await asyncio.to_thread(client_socket.recv, 90000)
+
+            # TODO recv need to be fixed, adjust buffer-size
+            # see: https://github.com/vijendra1125/Python-Socket-Programming/blob/master/server.py
+
             if not response:
                 log("[client] Connection closed")
                 client_socket.close()
                 break
 
-            data = pickle.loads(response)
+            data = pickle.loads(response, encoding="utf-8", fix_imports=True, buffers=None)
 
             if isinstance(data, ClientMetaData):
                 self.node.server.clients[client_socket.getpeername()] = data
@@ -84,10 +90,9 @@ class P2PClient:
         return client_name in [self.clients[x].name for x in self.clients]
 
     async def send_message(self, message) -> None:
-        if isinstance(message, (bytes, bytearray)):
-            self.client.send(message)
-        else:
-            self.client.send(pickle.dumps(message))
+        if not isinstance(message, (bytes, bytearray)):
+            message = pickle.dumps(message, protocol=None)
+        self.client.sendall(message)
 
     async def connect_to_socket(self) -> None:
         if self.port == -1:
@@ -97,9 +102,5 @@ class P2PClient:
         client_socket.connect((self.host, self.port))
         self.client = client_socket
         asyncio.ensure_future(self.receive_data(client_socket))
-
-        client_socket.send(pickle.dumps(ClientMetaData(self.uid, self.server.port)))
+        await self.send_message(pickle.dumps(ClientMetaData(self.uid, self.server.port), protocol=None))
         await asyncio.sleep(1)
-        # TODO send known own client via AnnouncePeerMessage to all clients
-
-        #  client_socket.close()

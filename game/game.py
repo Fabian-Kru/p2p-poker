@@ -50,8 +50,15 @@ class Game:
             print("code_state")
             del self.data[data.game_object]
         elif data.game_object == "next_player":
-            self.poker.next_player = self.poker.players[data.game_value]
-            if data.game_value == self.own_name:
+            s = data.game_value.split(":")
+            name = s[0]
+            nex_round = bool(s[1])
+            print("next_player", name, str(nex_round))
+            self.poker.next_player = self.poker.players[name]
+
+            if nex_round:
+                self.poker.next_round()
+            if name == self.own_name:
                 log("[game] It's my turn")
             del self.data[data.game_object]
 
@@ -102,7 +109,10 @@ class Game:
             self.poker.players[name].poker_call(self.poker.current_bet)
             log("[game] action:call", name, chips, status)
         elif data.game_object == "action:check":
-            self.poker.players[data.game_value].poker_check()
+            s = data.game_value.split(":")
+            name = s[0]
+            status = int(s[1])
+            self.poker.players[name].poker_check()
             log("[game] action:check", data.game_value)
         elif data.game_object == "new_round":
             self.poker.new_round()
@@ -111,15 +121,17 @@ class Game:
             card_string = s[0]
             client_name = s[1]
             to_send = self.poker.get_card_codes(card_string, client_name)
-            game_master.handle_update(client_name, client_name, GameUpdateMessage(self, "receive:cards", to_send + [card_string]))
+            if to_send is not None:  # TODO why None?
+                game_master.handle_update(client_name, client_name, GameUpdateMessage(self, "receive:cards", to_send + [card_string]))
         elif data.game_object == "receive:cards":
             l = data.game_value
             card_string = l.pop(-1)
             self.poker.receive_card_codes(card_string, l)
             log("[game] receive:cards", card_string, l)
         elif data.game_object == "next_round":
-            self.poker.next_round()
-            log("[game] next_round")
+            print("nextround")
+            # self.poker.next_round()
+            #log("[game] next_round")
         else:
             log("[game] Unknown game update message", data.game_object)
 

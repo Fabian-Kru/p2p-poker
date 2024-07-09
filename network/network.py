@@ -66,7 +66,7 @@ class P2PNode:
 
         if self.server.known_client(client_name):
             if not isinstance(message, (bytes, bytearray)):
-                message = pickle.dumps(message)
+                message = pickle.dumps(message, protocol=None)
             asyncio.ensure_future(self.server.send_to_client(client_name, message))
             return
 
@@ -122,7 +122,7 @@ class P2PNode:
                       .get_current_game()
                       .poker
                       .player_action(self.game_master, self.game_master.get_current_game(), "client-" + str(self.sp),
-                                     "check", 0))
+                                     "check", 1))
             log("[server] Check result:", result)
             return
 
@@ -130,7 +130,7 @@ class P2PNode:
             result = (self.game_master
                       .get_current_game()
                       .poker
-                      .player_action(self.game_master, self.game_master.get_current_game(), self.name, "fold", 10))
+                      .player_action(self.game_master, self.game_master.get_current_game(), "client-" + str(self.sp), "fold", 10))
             log("[server] Fold result:", result)
             return
 
@@ -171,7 +171,7 @@ class P2PNode:
                 return
             client_name = parts[1]
             message = " ".join(parts[2:])
-            await self.send_to_client(client_name, pickle.dumps(Message(message)))
+            await self.send_to_client(client_name, pickle.dumps(Message(message), protocol=None))
             return
 
 

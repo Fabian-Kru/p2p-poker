@@ -124,4 +124,3 @@ class P2PServer:
             return
         for client in self.connections:
             await self.node.send_to_client(self.clients[client.getpeername()].name, message)
-           #TODO ?? client.send(pickle.dumps(message))

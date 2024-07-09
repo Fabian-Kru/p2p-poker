@@ -248,6 +248,7 @@ class Poker:
         log("Player action: ", player_obj, action, chips)
         match action:
             case "raise":
+                print("raise")
                 old_bet = self.current_bet
 
                 status = player_obj.poker_raise(chips, old_bet)
@@ -263,6 +264,7 @@ class Poker:
                                           player_name + ":" + str(chips) + ":" + str(self.current_bet) + ":" + str(old_bet))
                     )
             case "blinds":
+                print("blinds")
                 status = player_obj.poker_blinde(chips)
                 if chips > self.current_bet:
                     self.current_bet = chips
@@ -277,6 +279,7 @@ class Poker:
                                               self.current_bet))
                     )
             case "fold":
+                print("fold")
                 status = player_obj.poker_fold()
                 for p in game.poker.players:
                     if p == player_name:
@@ -289,6 +292,7 @@ class Poker:
                                               self.current_bet))
                     )
             case "check":
+                print("check")
                 status = player_obj.poker_check()  # for check -> next_player
                 for p in game.poker.players:
                     if p == player_name:
@@ -296,10 +300,11 @@ class Poker:
                     game_master.handle_update(
                         p,
                         p,
-                        GameUpdateMessage(game, "action:check", player_name)
+                        GameUpdateMessage(game, "action:check", player_name + ":" + str(status))
 
                     )
             case "call":
+                print("call")
                 status = player_obj.poker_call(self.current_bet)
                 for p in game.poker.players:
                     if p == player_name:
@@ -312,8 +317,8 @@ class Poker:
                                               self.current_bet))
                     )
             case _:
+                print("action not found")
                 status = Actions.ERROR_ACTION_NOT_FOUND
-        # da diese Methode immer aufgerufen wird, wenn ein Zug zu ende ist -> nächster Spieler
 
         plist = []
         for pl, _ in self.players.items():
@@ -328,19 +333,18 @@ class Poker:
                     game_master.handle_update(
                         p,
                         p,
-                        GameUpdateMessage(game, "next_player", next_player)
+                        GameUpdateMessage(game, "next_player", next_player + ":" +
+                                          str("check" in self.players[next_player].available_actions(self.current_bet) and self.players[next_player].played))
                     )
                 break
 
-        if ("check" in self.players[next_player].available_actions(self.current_bet)
-                and self.players[next_player].played):
-            for p in game.poker.players:
-                print(p)
-                game_master.handle_update(
-                      p,
-                      p,
-                      GameUpdateMessage(game, "next_round", next_player)
-                )
+
+      #  for p in game.poker.players:
+      #      game_master.handle_update(
+      #          p,
+      #          p,
+      #          GameUpdateMessage(game, "next_round", next_player)
+      #      )
 
         if self.active_players() == 1:
             self.trigger_end()
