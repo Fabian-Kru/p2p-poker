@@ -2,7 +2,6 @@ import asyncio
 import pickle
 from typing import TYPE_CHECKING, List
 
-from data.game.GameUpdateMessage import GameUpdateMessage
 from network.client import P2PClient
 from data.Message import Message
 from data.game.GameSearchMessage import GameSearchMessage
@@ -105,11 +104,8 @@ class P2PNode:
         if command == "cards":
             print("[server] Requesting cards")
             for player in self.game_master.get_current_game().poker.players:
-                self.game_master.handle_update(
-                    player,
-                    player,
-                    GameUpdateMessage(self.game_master.get_current_game(), "next_round", "next_player")
-                )
+                self.game_master.get_current_game().poker.request_card_codes(player)
+                break
             return
 
         if command == "raise":
