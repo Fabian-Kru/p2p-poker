@@ -4,6 +4,7 @@ import pytermgui as ptg
 from pytermgui import Container, Splitter, Window, InputField
 
 import data.game
+from game.game_util import Actions
 from game.player import Player
 
 
@@ -62,7 +63,7 @@ class Tui:
                         ["Find Games", lambda *_: self.find_games()],
                         ["Help", lambda *_: self.open_help()],
                         ["Exit", lambda *_: exit(0)],
-#                        ["bla", lambda *_: self.draw_game(["open1, open2"], ["yours1", "yours2"], 100, 10, 1000)]
+                        ["bla", lambda *_: self.draw_game(["open1, open2"], ["yours1", "yours2"], 100, 10, 1000)]
                     ),
                     width=100,
                     box="DOUBLE",
@@ -99,11 +100,11 @@ class Tui:
 
     # TODO
     def find_games(self):
+
         # ToDo: Add Method to get all open games
         game_buttons = []
         for game_id in self.node.get_open_games():
-            game_buttons.append(
-                [game_id, lambda *_: print("Start " + game_id)])
+            game_buttons.append([game_id, lambda *_: print("Start " + game_id)])
 
         with ptg.WindowManager() as manager:
             window = (
@@ -171,10 +172,17 @@ class Tui:
             yc += card + " - "
 
         # ToDo: get playerlist and their data
-        players = [Player("test1", self.node.game_master.get_current_game()), Player("test2", self.node.game_master.get_current_game())]
+        player2 = Player("test3")
+        player2.status = Actions.PLAYING
+        player2.bet = 10
+        player3 = Player("test3")
+        player3.status = Actions.DEALER
+        player4 = Player("test4")
+        player4.status = Actions.ALL_IN
+        players = [Player("test1"), player2, player3, player4]
         player_list = []
         for player in players:
-            player_list.append(Splitter(player.name, str(player.bet), "N/A"))
+            player_list.append(Splitter(player.name, str(player.bet), player.status.name))
 
         with ptg.WindowManager() as manager:
             window = (
