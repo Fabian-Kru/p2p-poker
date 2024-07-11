@@ -48,7 +48,6 @@ class P2PServer:
             node.connect_to_node("127.0.0.1", bp)
         while True:
             client, _ = self.server.accept()
-           # asyncio.ensure_future(self.__handle_client(client))  # ensure_future -> run in background
             threading.Thread(target=self.__handle_client, args=(client,)).start()
 
     def __handle_client(self, client: socket):

@@ -50,13 +50,7 @@ class P2PClient:
                         log("[client] Connecting to new peer", newPeers[1])
             elif isinstance(data, GameSearchMessage):
                 log("[client] >GameSearchMessage received", data.game)
-                self.node.add_game_search(data.game.game_id)
-
-                self.node.game_master.add_game(data.game)
-                game = self.node.game_master.get_or_add_game(data.game)
-                game.add_client_local(self.name)
-                self.send_message(GameJoinMessage(data.game, self.name))
-                log("[client] >GameJoinMessage sent", data.game, self.name)
+                self.node.add_game_search(data)
                 # update ttl and forward to ttl clients
                 updated_message = GameSearchMessage(data.ttl - 1, self.uid, data.game)
                 if updated_message.ttl > 0:  # only forward if ttl > 0
