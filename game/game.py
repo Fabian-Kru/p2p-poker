@@ -10,7 +10,6 @@ class Game:
     data: dict = {}
     clients: list = []
 
-    cards: list = []
     poker = None
 
     def __init__(self, game_id, own_name, master, poker, dont_log=False) -> None:
@@ -45,19 +44,23 @@ class Game:
             log("[game] Players updated", self.clients)
             del self.data[data.game_object]
         elif data.game_object == "cards":
-            self.cards = data.game_value
-            self.poker.code_state = self.cards
-            print("code_state")
+            self.poker.code_state = data.game_value
             del self.data[data.game_object]
         elif data.game_object == "next_player":
-            print("next_player", data.game_value)
             self.poker.next_player = self.poker.players[data.game_value]
             if data.game_value == self.own_name:
                 log("[game] It's my turn")
             del self.data[data.game_object]
         elif data.game_object == "next_round":
-            print("next_round", data.game_value)
-            self.poker.next_round()
+            self.poker.next_round(game_master, self)
+            self.poker.next_player = self.poker.players[self.poker.get_active_players_playing()[0]]  # TODO change with
+
+            # changing dealer
+            log("next_round", data.game_value, "next_player:", self.poker.next_player)
+
+            if self.poker.next_player.name == self.own_name:
+                log("[game] It's my turn")
+
             del self.data[data.game_object]
         elif data.game_object == "action:raise":
             s = data.game_value.split(":")
@@ -115,22 +118,31 @@ class Game:
             self.poker.new_round()
         elif data.game_object == "get:cards":
             s = data.game_value.split(":")
-            card_string = s[0]
-            client_name = s[1]
+            client_name = s[0]
+            card_string = s[1]
+
             to_send = self.poker.get_card_codes(card_string, client_name)
-            if to_send is not None:  # TODO why None?
+
+            log("[game] get:cards", client_name, card_string, to_send)
+            if to_send is not None:
                 game_master.handle_update(client_name, client_name, GameUpdateMessage(self, "receive:cards", to_send + [card_string]))
         elif data.game_object == "receive:cards":
             l = data.game_value
             card_string = l.pop(-1)
-            self.poker.receive_card_codes(card_string, l)
+            self.poker.receive_card_codes(card_string, l, game_master, self)
             log("[game] receive:cards", card_string, l)
-        elif data.game_object == "next_round":
-            print("nextround")
-            # self.poker.next_round()
-            #log("[game] next_round")
+        elif data.game_object == "trigger_end":
+            self.poker.trigger_end()
+            log("[game] trigger_end")
         else:
             log("[game] Unknown game update message", data.game_object)
+
+    def new_round(self, game_master):
+        for p in self.poker.players:
+            game_master.handle_update(
+                p,
+                p,
+                GameUpdateMessage(self, "new_round", ""))
 
     def __str__(self) -> str:
         return (
@@ -140,5 +152,5 @@ class Game:
                 + " " + str(self.is_master)
                 + " " + str(self.master)
                 + " " + str(self.clients)
-                + " " + str(self.cards)
+
         )

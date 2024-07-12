@@ -161,10 +161,17 @@ class P2PNode:
                   .player_action(self.game_master, self.game_master.get_current_game(), self.name, "blinds", chips))
         log("[server] Blinds result:", result)
 
+    def new_round(self):
+        self.game_master.get_current_game().new_round(self.game_master)
+
     def __process_input(self, command: str) -> None:
 
         if command == "create_game":
             self.create_game()
+            return
+
+        if command == "new_round":
+            self.new_round()
             return
 
         if command == "join":

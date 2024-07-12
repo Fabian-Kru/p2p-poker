@@ -29,7 +29,6 @@ class Player:
         :param chips: Amount of chips raised
         :return: Returns the amount of chips or an Error if the raise is not possible.
         """
-        print("current_bet", current_bet, "chips", chips)
         if self.status != Actions.PLAYING:
             return Actions.ERROR_NOT_PLAYING
 

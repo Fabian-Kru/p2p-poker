@@ -62,10 +62,14 @@ class GameMaster:
             self.handle_update(players, players, GameUpdateMessage(game, "clients", game.clients))
 
         for player_name in player_cards.keys():
-            print("[game] Dealing cards to:", player_name)
             update = GameUpdateMessage(game, "cards", player_cards[player_name])
             self.handle_update(player_name, player_name, update)
-
+            update_cards = GameUpdateMessage(
+                game,
+                "receive:cards",
+                game.poker.get_card_codes(player_name, player_name) + [player_name]
+            )
+            self.handle_update(player_name, player_name, update_cards)
         print("Es startet: ", game.poker.next_player.name)
         self.handle_update(game.poker.next_player.name, game.poker.next_player.name,
                            GameUpdateMessage(game, "next_player", game.poker.next_player.name))
@@ -74,7 +78,7 @@ class GameMaster:
         if receiver is not None:
             update.set_receiver(receiver)
 
-        if player_name == self.node.name and (update.game.master != self.node.name):
+        if player_name == self.node.name:
             update.update_game_with_data(self.node.game_master)
         else:
             self.node.send_to_client(player_name, pickle.dumps(update, protocol=None))
