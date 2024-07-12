@@ -16,16 +16,18 @@ if server_port == 5454:
 
 network = P2PNode(server_port, bootstrap_port)
 
-Tui.create_tui(network).open_main()
+tui = Tui.create_tui(network)
 
 try:
-    input_thread = threading.Thread(target=network.process_input)
+    #input_thread = threading.Thread(target=network.process_input)
+    tui_thread = threading.Thread(target=tui.open_main)
     server_thread = threading.Thread(target=network.run)
 
-    input_thread.daemon = True
+    #input_thread.daemon = True
+    tui_thread.daemon = True
     server_thread.daemon = True
 
-    input_thread.start()
+    tui_thread.start()
     server_thread.start()
 except Exception as e:
     print("Error starting threads", e)

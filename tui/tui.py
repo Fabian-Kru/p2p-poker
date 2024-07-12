@@ -1,4 +1,3 @@
-import asyncio
 import pytermgui as ptg
 
 from pytermgui import Container, Splitter, Window, InputField
@@ -134,9 +133,7 @@ class Tui:
             game = self.node.game_master.create_game("Game-" + str(self.node.sp))
             # that's a horrible solution
             # but I'm to lazy at this point
-            asyncio.ensure_future(self.node.server.broadcast_message(
-                data.game.GameSearchMessage.GameSearchMessage(ttl=2, sender=None, game=game.get_client_object()))
-            )
+            data.game.GameSearchMessage.GameSearchMessage(ttl=2, sender=None, game=game.get_client_object())
 
         with ptg.WindowManager() as manager:
             window = (
