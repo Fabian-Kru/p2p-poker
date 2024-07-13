@@ -1,4 +1,5 @@
 from data.game.GameUpdateMessage import GameUpdateMessage
+from game.game_util import Actions
 from util.logging import log
 
 
@@ -134,6 +135,9 @@ class Game:
         elif data.game_object == "trigger_end":
             self.poker.trigger_end()
             log("[game] trigger_end")
+        elif data.game_object == "client:disconnect":
+            self.poker.players[data.game_value].status = Actions.DISCONNECTED
+            log("[game] client:disconnect", data.game_value)
         else:
             log("[game] Unknown game update message", data.game_object)
 

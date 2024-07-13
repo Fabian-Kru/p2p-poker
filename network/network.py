@@ -164,7 +164,16 @@ class P2PNode:
     def new_round(self):
         self.game_master.get_current_game().new_round(self.game_master)
 
+    def shutdown(self) -> None:
+        for client in self.clients:
+            client.close_connection()
+        self.server.close_connections()
+
     def __process_input(self, command: str) -> None:
+
+        if command == "stop":
+            self.shutdown()
+            return
 
         if command == "create_game":
             self.create_game()

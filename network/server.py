@@ -1,5 +1,6 @@
 import pickle
 import socket
+import sys
 import threading
 from typing import TYPE_CHECKING
 
@@ -47,8 +48,18 @@ class P2PServer:
         if bp != -1:
             node.connect_to_node("127.0.0.1", bp)
         while True:
-            client, _ = self.server.accept()
-            threading.Thread(target=self.__handle_client, args=(client,)).start()
+            try:
+                client, _ = self.server.accept()
+                threading.Thread(target=self.__handle_client, args=(client,)).start()
+            except (socket.error, ConnectionResetError, OSError) as e:
+                sys.exit(0)
+                break
+
+    def close_connections(self) -> None:
+        for client in self.connections:
+            client.close()
+        self.server.close()
+        sys.exit(1)
 
     def __handle_client(self, client: socket):
         """
@@ -56,53 +67,63 @@ class P2PServer:
         clients are incoming_connections stored in clients
 
         """
-        request = None
-        while request != 'quit':
-            request = client.recv(90000)
+        while True:
+            try:
+                request = client.recv(90000)
 
-            if client not in self.connections:
-                self.connections.append(client)
-                client.send(pickle.dumps(ClientMetaData(self.node.name, self.port)))
+                if not request or request == b'' or len(request) == 0:  # client disconnected
+                    log(f"[server] {self.clients[client.getpeername()].name} disconnected!")
+                    del self.clients[client.getpeername()]
+                    self.connections.remove(client)
+                    break
 
-            if request == b'':  # client disconnected
-                log(f"[server] {self.clients[client.getpeername()].name} disconnected!")
+                if client not in self.connections:
+                    self.connections.append(client)
+                    client.send(pickle.dumps(ClientMetaData(self.node.name, self.port)))
+
+                o = pickle.loads(request)  # deserialize object
+
+                if isinstance(o, ClientMetaData):
+                    a = AnnouncePeerMessage([(k[0], self.clients[k].port) for k, v in self.clients.items()], True)
+                    if a.known_connections:
+                        for k, v in self.clients.items():
+                            log(f"{k}: {v} ")
+                            r = next((e for e in self.connections if e.getpeername() == client.getpeername()))
+                            r.send(pickle.dumps(a))
+                            log(f"[server] Sending to {o.port}>{r.getpeername()}: {a}")
+
+                    log(f"[server] New client detected {client.getpeername()} as {o.name} at port {o.port}")
+                    self.clients[client.getpeername()] = o
+                elif isinstance(o, Message.Message):
+                    log(f"[server] Message: {o.message}")
+                elif isinstance(o, AnnouncePeerMessage):
+                    log(f"[server] Received: Announced ----> {o}")
+                elif isinstance(o, GameUpdateMessage):
+                    print("[server] >GameUpdateMessage received", o.game.game_id, o.game_object, o.game_value)
+                    game = self.node.game_master.get_or_add_game(o.game)
+                    game.update(o, self.node.game_master)
+                elif isinstance(o, GameJoinMessage):
+                    log("[server] >GameJoinMessage received", o)
+                    game = self.node.game_master.get_or_add_game(o.game)
+                    self.node.game_master.add_client(game.game_id, o.player)
+                elif isinstance(o, ForwardMessage):
+                    log("[server] >ForwardMessage received", o.message)
+                    if self.node.knows_client(o.receiver):
+                        self.node.send_to_client(o.receiver, o.message)
+
+                else:
+                    log(f"[server] Unknown object received {o}")
+            except (socket.error, ConnectionResetError) as e:
+                name = self.clients[client.getpeername()].name
+                log(f"[Socket-Error, Server] {name} disconnected!")
+                self.node.game_master.client_disconnect(name)
                 del self.clients[client.getpeername()]
                 self.connections.remove(client)
                 break
+            except Exception as e:
+                log(f"[server] Error: {e}")
+                break
 
-            o = pickle.loads(request)  # deserialize object
-
-            if isinstance(o, ClientMetaData):
-                a = AnnouncePeerMessage([(k[0], self.clients[k].port) for k, v in self.clients.items()], True)
-                if a.known_connections:
-                    for k, v in self.clients.items():
-                        log(f"{k}: {v} ")
-                        r = next((e for e in self.connections if e.getpeername() == client.getpeername()))
-                        r.send(pickle.dumps(a))
-                        log(f"[server] Sending to {o.port}>{r.getpeername()}: {a}")
-
-                log(f"[server] New client detected {client.getpeername()} as {o.name} at port {o.port}")
-                self.clients[client.getpeername()] = o
-            elif isinstance(o, Message.Message):
-                log(f"[server] Message: {o.message}")
-            elif isinstance(o, AnnouncePeerMessage):
-                log(f"[server] Received: Announced ----> {o}")
-            elif isinstance(o, GameUpdateMessage):
-                print("[server] >GameUpdateMessage received", o.game.game_id, o.game_object, o.game_value)
-                game = self.node.game_master.get_or_add_game(o.game)
-                game.update(o, self.node.game_master)
-            elif isinstance(o, GameJoinMessage):
-                log("[server] >GameJoinMessage received", o)
-                game = self.node.game_master.get_or_add_game(o.game)
-                self.node.game_master.add_client(game.game_id, o.player)
-            elif isinstance(o, ForwardMessage):
-                log("[server] >ForwardMessage received", o.message)
-                if self.node.knows_client(o.receiver):
-                    self.node.send_to_client(o.receiver, o.message)
-
-            else:
-                log(f"[server] Unknown object received {o}")
-            # TODO handle request, store client information, etc.
         client.close()
 
     def known_client(self, client_name: str) -> bool:

@@ -28,6 +28,16 @@ class GameMaster:
         self.games = {}
         self.node = node
 
+    def client_disconnect(self, client_name: str) -> None:
+        for k, game in self.games.items():
+            g = game["game"]
+            if client_name in g.clients:
+                for clients in g.poker.players:
+                    if clients != client_name:
+                        self.handle_update(clients, clients,
+                                           GameUpdateMessage(g, "client:disconnect", client_name))
+                continue
+
     def add_client(self, game_id: str, client) -> None:
         for k, game in self.games.items():
             if k == game_id:
