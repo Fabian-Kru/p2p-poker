@@ -147,10 +147,7 @@ class Tui:
             for player in self.node.game_master.get_current_game().clients():
                 player_list.append(player)
         else:
-            game = self.node.game_master.create_game("Game-" + str(self.node.sp))
-            # that's a horrible solution
-            # but I'm to lazy at this point
-            data.game.GameSearchMessage.GameSearchMessage(ttl=2, sender=None, game=game.get_client_object())
+            self.node.create_game()
 
         with ptg.WindowManager() as manager:
             window = (
