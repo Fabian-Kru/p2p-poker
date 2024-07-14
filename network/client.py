@@ -9,6 +9,7 @@ from data.ForwardMessage import ForwardMessage
 from data.game.GameJoinMessage import GameJoinMessage
 from data.game.GameSearchMessage import GameSearchMessage
 from data.game.GameUpdateMessage import GameUpdateMessage
+from network import network_util
 from util.logging import log
 
 
@@ -29,10 +30,7 @@ class P2PClient:
         no_error = True
         while no_error:
             try:
-                response = client_socket.recv(90000)
-
-                # TODO recv need to be fixed, adjust buffer-size
-                # see: https://github.com/vijendra1125/Python-Socket-Programming/blob/master/server.py
+                response = network_util.recv_msg(client_socket)
 
                 if not response:
                     log("[client] Connection closed")
@@ -88,7 +86,7 @@ class P2PClient:
     def send_message(self, message) -> None:
         if not isinstance(message, (bytes, bytearray)):
             message = pickle.dumps(message, protocol=None)
-        self.client.sendall(message)
+        network_util.send_msg(self.client, message)
 
     def close_connection(self):
         log("[client] Closing connection")

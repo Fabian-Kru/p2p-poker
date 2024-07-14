@@ -6,6 +6,7 @@ from data.game.GameJoinMessage import GameJoinMessage
 from data.game.GameSearchMessage import GameSearchMessage
 from game.game import Game
 from game.gamemanager import GameMaster
+from network import network_util
 from network.client import P2PClient
 from util.logging import log
 

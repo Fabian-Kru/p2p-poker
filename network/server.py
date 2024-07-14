@@ -10,6 +10,7 @@ from data.ClientMetaData import ClientMetaData
 from data.ForwardMessage import ForwardMessage
 from data.game.GameJoinMessage import GameJoinMessage
 from data.game.GameUpdateMessage import GameUpdateMessage
+from network import network_util
 from util.logging import log
 
 if TYPE_CHECKING:
@@ -70,7 +71,7 @@ class P2PServer:
         """
         while True:
             try:
-                request = client.recv(90000)
+                request = network_util.recv_msg(client)
 
                 if not request or request == b'' or len(request) == 0:  # client disconnected
                     log(f"[server] {self.clients[client.getpeername()].name} disconnected!")
@@ -80,7 +81,8 @@ class P2PServer:
 
                 if client not in self.connections:
                     self.connections.append(client)
-                    client.send(pickle.dumps(ClientMetaData(self.node.name, self.port)))
+                    message = pickle.dumps(ClientMetaData(self.node.name, self.port))
+                    network_util.send_msg(client, message)
 
                 o = pickle.loads(request)  # deserialize object
 
@@ -90,7 +92,7 @@ class P2PServer:
                         for k, v in self.clients.items():
                             log(f"{k}: {v} ")
                             r = next((e for e in self.connections if e.getpeername() == client.getpeername()))
-                            r.send(pickle.dumps(a))
+                            network_util.send_msg(r, pickle.dumps(a))
                             log(f"[server] Sending to {o.port}>{r.getpeername()}: {a}")
 
                     log(f"[server] New client detected {client.getpeername()} as {o.name} at port {o.port}")
@@ -134,9 +136,9 @@ class P2PServer:
         for client in self.connections:
             if self.clients[client.getpeername()].name == client_name:
                 if isinstance(message, (bytes, bytearray)):
-                    client.send(message)
+                    network_util.send_msg(client, message)
                 else:
-                    client.send(pickle.dumps(message))
+                    network_util.send_msg(client, pickle.dumps(message))
                 break
 
     def broadcast_message(self, message) -> None:
