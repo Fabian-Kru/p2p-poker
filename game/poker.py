@@ -102,7 +102,7 @@ class Poker:
         self.round = 0
         self.current_bet = 0
         self.open = False
-        for players in self.players:
+        for _, players in self.players.items():
             players.new_round()
 
     def request_card_codes(self, card_string):
@@ -252,11 +252,6 @@ class Poker:
             self.triggerd = True
             log("[game] sending trigger_end")
             self.trigger_end()
-            # for p in self.players:
-            #    game_master.handle_update(
-            #        p,
-            #        p,
-            #        GameUpdateMessage(game, "trigger_end", "trigger_end"))
 
     def player_action(self, game_master, game, player_name, action, chips) -> int:
         self.played = True

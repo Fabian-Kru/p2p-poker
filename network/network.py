@@ -162,7 +162,7 @@ class P2PNode:
         log("[server] Blinds result:", result)
 
     def new_round(self):
-        self.game_master.get_current_game().new_round(self.game_master)
+        self.game_master.new_round(self.game_master.get_current_game())
 
     def shutdown(self) -> None:
         for client in self.clients:

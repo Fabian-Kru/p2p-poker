@@ -141,13 +141,6 @@ class Game:
         else:
             log("[game] Unknown game update message", data.game_object)
 
-    def new_round(self, game_master):
-        for p in self.poker.players:
-            game_master.handle_update(
-                p,
-                p,
-                GameUpdateMessage(self, "new_round", ""))
-
     def __str__(self) -> str:
         return (
                 "Game: "

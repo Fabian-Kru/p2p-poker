@@ -50,10 +50,9 @@ class GameMaster:
         self.handle_update(game.master, game.master, GameUpdateMessage(game, "get:cards", name + ":" + card_string))
 
     def new_round(self, game) -> None:
-        poker: Poker = game.poker
-        poker.new_round()
         for player in game.poker.players:
             self.handle_update(player, player, GameUpdateMessage(game, "new_round", None))
+        self.start_round(game)
 
     def start_game(self, game):
         if game.game_id not in self.games.keys():
@@ -66,6 +65,9 @@ class GameMaster:
             self.games[game.game_id]["game"].add_client_local(self.node.name)
 
         game.poker.set_players(game.clients)
+        self.start_round(game)
+
+    def start_round(self, game):
         player_cards = game.poker.deal_cards()
 
         for players in player_cards:
@@ -83,6 +85,7 @@ class GameMaster:
         print("Es startet: ", game.poker.next_player.name)
         self.handle_update(game.poker.next_player.name, game.poker.next_player.name,
                            GameUpdateMessage(game, "next_player", game.poker.next_player.name))
+
 
     def handle_update(self, receiver: [str, None], player_name: str, update: GameUpdateMessage) -> None:
         if receiver is not None:
