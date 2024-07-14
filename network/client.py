@@ -51,7 +51,7 @@ class P2PClient:
                 elif isinstance(data, GameSearchMessage):
                     log("[client] >GameSearchMessage received", data.game)
                     self.node.add_game_search(data)
-                    self.node.join_any_game()
+                    # uncomment for fast testing self.node.join_any_game()
                     # update ttl and forward to ttl clients
                     updated_message = GameSearchMessage(data.ttl - 1, self.uid, data.game)
                     if updated_message.ttl > 0:  # only forward if ttl > 0
