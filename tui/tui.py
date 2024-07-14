@@ -1,10 +1,9 @@
 import pytermgui as ptg
 
 from pytermgui import Container, Splitter, Window, InputField
+from treys import Card
 
 import data.game
-from game.game_util import Actions
-from game.player import Player
 
 
 class Tui:
@@ -62,7 +61,6 @@ class Tui:
                         ["Find Games", lambda *_: self.find_games()],
                         ["Help", lambda *_: self.open_help()],
                         ["Exit", lambda *_: exit(0)],
-                        ["bla", lambda *_: self.draw_game(["open1, open2"], ["yours1", "yours2"], 100, 10, 1000)]
                     ),
                     width=100,
                     box="DOUBLE",
@@ -97,7 +95,6 @@ class Tui:
 
             manager.add(window)
 
-    # TODO
     def find_games(self):
         game_buttons = []
         for gsm in self.node.get_open_games():
@@ -166,7 +163,7 @@ class Tui:
                         "[210] Player list:",
                         *player_list
                     ),
-                    ["Start Game", lambda *_: self.node.game_master.start_game(self.node.game_master.get_current_game())],
+                    ["Start Game", lambda *_: self.start_game()],
                     "",
                     ["Back To Main Menu", lambda *_: self.open_main()],
                     width=100,
@@ -178,28 +175,15 @@ class Tui:
 
             manager.add(window)
 
-    # TODO
-    def draw_game(self, open_cards: [], your_cards: [], chips: int = 0, bet: int = 0, all_bet: int = 0,
-                  your_draw: bool = True,
-                  raise_chips: bool = True, check: bool = True, fold: bool = True, call: bool = True):
-        oc = " - "
-        for card in open_cards:
-            oc += card + " - "
-        yc = " - "
-        for card in your_cards:
-            yc += card + " - "
+    def start_game(self):
+        self.node.game_master.start_game(self.node.game_master.get_current_game())
+        # ToDo draw game!
 
-        # ToDo: get playerlist and their data
-        player2 = Player("test3")
-        player2.status = Actions.PLAYING
-        player2.bet = 10
-        player3 = Player("test3")
-        player3.status = Actions.DEALER
-        player4 = Player("test4")
-        player4.status = Actions.ALL_IN
-        players = [Player("test1"), player2, player3, player4]
+    # TODO
+    def draw_game(self, your_draw: bool = True,
+                  raise_chips: bool = True, check: bool = True, fold: bool = True, call: bool = True):
         player_list = []
-        for player in players:
+        for player in self.node.game_master.get_current_game().clients():
             player_list.append(Splitter(player.name, str(player.bet), player.status.name))
 
         with ptg.WindowManager() as manager:
@@ -214,15 +198,16 @@ class Tui:
                         Container(
                             Container(
                                 "Open Cards:",
-                                Container(oc)
+                                Container(Card.ints_to_pretty_str(self.node.game_master.get_current_game().cards))
                             ),
                             Container(
                                 "Your cards",
-                                Container(yc)
+                                Container(self.node.game_master.get_current_game().poker.card_state[
+                                              self.node.game_master.get_current_game().myself.name])
                             ),
-                            "Your Chips: " + str(chips),
-                            "Your Bet: " + str(bet),
-                            "Everyones Bet: " + str(all_bet)
+                            "Your Chips: " + str(self.node.game_master.get_current_game().myself.chips),
+                            "Your Bet: " + str(self.node.game_master.get_current_game().myself.bet),
+                            "Everyones Bet: " + str(self.node.game_master.get_current_game().poker.current_bet)
                         )
                     ),
                     "",
