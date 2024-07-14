@@ -5,21 +5,21 @@ from treys import Card
 
 import data.game
 
+active_tui = None
+
+
+def create_tui(node: 'P2PNode'):
+    global active_tui
+    active_tui = Tui(node)
+    return active_tui
+
+
+def get_tui():
+    global active_tui
+    return active_tui
+
 
 class Tui:
-    active_tui = None
-
-    @staticmethod
-    def create_tui(node: 'P2PNode'):
-        global active_tui
-        active_tui = Tui(node)
-        return active_tui
-
-    @staticmethod
-    def get_tui():
-        global active_tui
-        return active_tui
-
     def __init__(self, node: 'P2PNode') -> None:
         CONFIG = """
         config:
@@ -144,7 +144,7 @@ class Tui:
     def create_game(self, renew: bool = True):
         player_list = []
         if renew:
-            for player in self.node.game_master.get_current_game().clients():
+            for player in self.node.game_master.get_current_game().clients:
                 player_list.append(player)
         else:
             self.node.create_game()

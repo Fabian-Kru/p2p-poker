@@ -2,7 +2,7 @@ import sys
 import threading
 
 from network.network import P2PNode
-from tui.tui import Tui
+from tui import tui
 
 server_port = int(input("Enter server_port: "))
 
@@ -16,7 +16,7 @@ if server_port == 5454:
 
 network = P2PNode(server_port, bootstrap_port)
 
-tui = Tui.create_tui(network)
+tui = tui.create_tui(network)
 
 try:
     #input_thread = threading.Thread(target=network.process_input)
