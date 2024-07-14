@@ -72,7 +72,6 @@ class Game:
 
             if name == self.own_name:
                 return
-            print(name, chips, current_bet, old_bet)
             result = self.poker.players[name].poker_raise(chips, old_bet)
             self.poker.current_bet = current_bet
 
@@ -139,7 +138,6 @@ class Game:
             self.poker.players[data.game_value].status = Actions.DISCONNECTED
             log("[game] client:disconnect", data.game_value)
         elif data.game_object == "dealer":
-            print("dealer", data.game_value, self.poker.players)
             self.poker.players[data.game_value].status = Actions.DEALER
             self.master = data.game_value
             if self.own_name == data.game_value:

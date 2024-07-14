@@ -114,8 +114,6 @@ class Poker:
         next = False
         for name, player in self.players.items():
 
-            print(player)
-
             if player.status == Actions.DEALER:
                 next = True
             elif next:
@@ -220,7 +218,6 @@ class Poker:
                             or self.players[card_string].status == Actions.ALL_IN)
 
     def get_card_codes(self, card_string, client_name):
-        print(card_string, self.round, self.__card_permission(card_string, client_name))
         if self.__card_permission(card_string, client_name):
             match card_string:
                 case "b1":
@@ -262,7 +259,6 @@ class Poker:
 
     def player_action(self, game_master, game, player_name, action, chips) -> int:
         self.played = True
-        print(self.players)
         player_obj = self.players[player_name]
         log("Player action: ", player_obj, action, chips)
         match action:
@@ -320,7 +316,6 @@ class Poker:
 
                     )
             case "call":
-                print("call")
                 status = player_obj.poker_call(self.current_bet)
                 for p in game.poker.players:
                     if p == player_name:
@@ -360,7 +355,6 @@ class Poker:
                     self.next_player = self.players[next_player]
                     break
 
-            print("next_player", next_player)
             if ("check" in self.players[next_player].available_actions(self.current_bet)
                     and self.players[next_player].played):
                 print(self.name)

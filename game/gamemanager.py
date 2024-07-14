@@ -98,7 +98,7 @@ class GameMaster:
                 )
                 self.handle_update(player_name, player_name, update_cards)
         game.poker.set_next_player()
-        print("Es startet: ", game.poker.next_player.name)
+        log("Es startet: ", game.poker.next_player.name)
         self.handle_update(game.poker.next_player.name, game.poker.next_player.name,
                            GameUpdateMessage(game, "next_player", game.poker.next_player.name))
 
@@ -114,13 +114,12 @@ class GameMaster:
     def update_games(self, game_id: str, key, value) -> None:
         for k, games in self.games.items():
             if k == game_id:
-                print("[game] Updating game with id:", game_id, key, "=", value)
+                log("[game] Updating game with id:", game_id, key, "=", value)
                 self.games[game_id]["game"].data[key] = value
-                print(self.games[game_id]["game"])
                 break
 
     def create_game(self, game_id: str) -> Game:
-        print("[game] Hosting game with id:", game_id)
+        log("[game] Hosting game with id:", game_id)
         poker = Poker(self.node.name, game_id)
         game = Game(game_id, self.node.name, self.node.name, poker)
         game.set_master(self.node.name)
