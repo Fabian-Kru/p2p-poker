@@ -49,6 +49,13 @@ class GameMaster:
         game = self.get_game_by_id(game_id)
         self.handle_update(game.master, game.master, GameUpdateMessage(game, "get:cards", name + ":" + card_string))
 
+    def new_dealer_and_round(self, game):
+        game.poker.set_next_player()
+        log("[game] New dealer:", game.poker.next_player)
+        self.handle_update(game.poker.next_player.name,
+                           game.poker.next_player.name,
+                           GameUpdateMessage(game, "new_dealer", game.poker.next_player.name))
+
     def new_round(self, game) -> None:
         for player in game.poker.players:
             self.handle_update(player, player, GameUpdateMessage(game, "new_round", None))
@@ -65,15 +72,21 @@ class GameMaster:
             self.games[game.game_id]["game"].add_client_local(self.node.name)
 
         game.poker.set_players(game.clients)
+
+        for players in game.clients:
+            self.handle_update(players, players, GameUpdateMessage(game, "clients", game.clients))
+
         self.start_round(game)
 
     def start_round(self, game):
         player_cards = game.poker.deal_cards()
 
         for players in player_cards:
-            self.handle_update(players, players, GameUpdateMessage(game, "clients", game.clients))
+            self.handle_update(players, players, GameUpdateMessage(game, "dealer", game.master))
 
         for player_name in player_cards.keys():
+            if player_name == game.master:
+                continue
             update = GameUpdateMessage(game, "cards", player_cards[player_name])
             self.handle_update(player_name, player_name, update)
             update_cards = GameUpdateMessage(
@@ -85,7 +98,6 @@ class GameMaster:
         print("Es startet: ", game.poker.next_player.name)
         self.handle_update(game.poker.next_player.name, game.poker.next_player.name,
                            GameUpdateMessage(game, "next_player", game.poker.next_player.name))
-
 
     def handle_update(self, receiver: [str, None], player_name: str, update: GameUpdateMessage) -> None:
         if receiver is not None:

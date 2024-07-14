@@ -52,6 +52,7 @@ class P2PServer:
                 client, _ = self.server.accept()
                 threading.Thread(target=self.__handle_client, args=(client,)).start()
             except (socket.error, ConnectionResetError, OSError) as e:
+                log(f"[server] Error: {e}")
                 sys.exit(0)
                 break
 

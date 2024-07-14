@@ -138,6 +138,24 @@ class Game:
         elif data.game_object == "client:disconnect":
             self.poker.players[data.game_value].status = Actions.DISCONNECTED
             log("[game] client:disconnect", data.game_value)
+        elif data.game_object == "dealer":
+            print("dealer", data.game_value, self.poker.players)
+            self.poker.players[data.game_value].status = Actions.DEALER
+            self.master = data.game_value
+            if self.own_name == data.game_value:
+                self.is_master = True
+            else:
+                self.is_master = False
+            log("[game] dealer", data.game_value)
+            self.poker.set_next_player()
+        elif data.game_object == "new_dealer":
+            self.master = data.game_value
+            if self.own_name == data.game_value:
+                self.is_master = True
+            else:
+                self.is_master = False
+            game_master.new_round(self)
+            log("[game] new_dealer", data.game_value)
         else:
             log("[game] Unknown game update message", data.game_object)
 

@@ -115,15 +115,14 @@ class Poker:
         :return: the generated dictionary
         """
 
-        # TODO self.players[self.name].status = Actions.DEALER
+        self.players[self.name].status = Actions.DEALER
 
         self.card_state = {}
         deck = Deck()
 
         self.card_state["board"] = deck.draw(5)
 
-        #TODO Change to get_active_players()
-        for player_name in self.players:
+        for player_name in self.get_active_players():
             self.card_state[player_name] = deck.draw(2)
 
         key_dict = {}
@@ -158,20 +157,14 @@ class Poker:
 
     def set_players(self, player_list):
 
-        next_is_next = False
-
         for player_name in player_list:
             if player_name != self.name:
                 self.players[player_name] = player.Player(player_name)
                 if next:
                     self.next_player = self.players[player_name]
-                    next_is_next = False
             else:
                 self.players[player_name] = player.Player(player_name)
-                next_is_next = True
 
-        if next_is_next:
-            self.next_player = self.players[player_list[-1]]
 
     def next_round(self, game_master, game):
         time.sleep(1)
@@ -222,8 +215,6 @@ class Poker:
                     return [self.code_state["board"][4]]
                 case _:
                     return self.code_state[card_string]
-
-        # TODO Fabian send karten
 
     def receive_card_codes(self, card_string, code_list, game_master, game):
         if card_string in self.card_requests:
