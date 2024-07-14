@@ -99,11 +99,9 @@ class Tui:
 
     # TODO
     def find_games(self):
-
-        # ToDo: Add Method to get all open games
         game_buttons = []
-        for game_id in self.node.get_open_games():
-            game_buttons.append([game_id, lambda *_: print("Start " + game_id)])
+        for gsm in self.node.get_open_games():
+            game_buttons.append([gsm.game.game_id, lambda *_: self.join_game(gsm)])
 
         with ptg.WindowManager() as manager:
             window = (
@@ -119,6 +117,28 @@ class Tui:
                     box="SINGLE",
                 )
                 .set_title("[210 bold]Join Game")
+                .center()
+            )
+
+            manager.add(window)
+
+    def join_game(self, gsm: 'GameSearchMessage'):
+        self.node.join_game(gsm)
+
+        with ptg.WindowManager() as manager:
+            window = (
+                Window(
+                    "",
+                    Container(
+                        "You joined " + gsm.game.game_id,
+                        "",
+                        "Waiting for start..."
+                    ),
+                    "",
+                    width=100,
+                    box="SINGLE",
+                )
+                .set_title("[210 bold]Waiting")
                 .center()
             )
 
@@ -146,6 +166,7 @@ class Tui:
                         "[210] Player list:",
                         *player_list
                     ),
+                    ["Start Game", lambda *_: self.node.game_master.start_game(self.node.game_master.get_current_game())],
                     "",
                     ["Back To Main Menu", lambda *_: self.open_main()],
                     width=100,
@@ -208,9 +229,9 @@ class Tui:
                     Container(
                         "Actions:",
                         ["Bet", lambda *_: self.draw_bet()] if raise_chips else "(Bet not available)",
-                        ["Check", lambda *_: print("Todo")] if check else "(check not available)",
-                        ["Fold", lambda *_: print("Todo")] if fold else "(fold not available)",
-                        ["Call", lambda *_: print("Todo")] if call else "(call not available)",
+                        ["Check", lambda *_: self.node.poker_check()] if check else "(check not available)",
+                        ["Fold", lambda *_: self.node.poker_fold()] if fold else "(fold not available)",
+                        ["Call", lambda *_: self.node.poker_call()] if call else "(call not available)",
                     ) if your_draw else "",
                     width=128,
                     box="SINGLE",
@@ -259,6 +280,7 @@ class Tui:
         if result < 0:
             self.draw_bet("Invalid input.")
 
+        # ToDo
         self.draw_game(["open1, open2"], ["yours1", "yours2"], 100, 10, 1000)
 
     def draw_end(self, win: bool):
