@@ -109,6 +109,22 @@ class Poker:
         self.card_requests.append(card_string)
         gamemanager.active_game_master.get_master().deliver_card_code(self.game_id, self.name, card_string)
 
+    def set_next_player(self):
+
+        next = False
+        for name, player in self.players.items():
+
+            print(player)
+
+            if player.status == Actions.DEALER:
+                next = True
+            elif next:
+                self.next_player = player
+                return
+
+        if next:
+            self.next_player = self.players[list(self.players.keys())[0]]
+
     def deal_cards(self):
         """
         Generates a dictionary with key lists for each player and cards with one number replaced to encode the cards.

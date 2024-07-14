@@ -89,12 +89,15 @@ class GameMaster:
                 continue
             update = GameUpdateMessage(game, "cards", player_cards[player_name])
             self.handle_update(player_name, player_name, update)
-            update_cards = GameUpdateMessage(
-                game,
-                "receive:cards",
-                game.poker.get_card_codes(player_name, player_name) + [player_name]
-            )
-            self.handle_update(player_name, player_name, update_cards)
+
+            if player_name in game.poker.get_active_players():
+                update_cards = GameUpdateMessage(
+                    game,
+                    "receive:cards",
+                    game.poker.get_card_codes(player_name, player_name) + [player_name]
+                )
+                self.handle_update(player_name, player_name, update_cards)
+        game.poker.set_next_player()
         print("Es startet: ", game.poker.next_player.name)
         self.handle_update(game.poker.next_player.name, game.poker.next_player.name,
                            GameUpdateMessage(game, "next_player", game.poker.next_player.name))
