@@ -53,20 +53,24 @@ class Game:
             del self.data[data.game_object]
         elif data.game_object == "next_player":
             self.poker.next_player = self.poker.players[data.game_value]
-            if data.game_value == self.own_name:
-                log("[game] It's my turn")
             del self.data[data.game_object]
+
+            if data.game_value == self.own_name:
+                tui.get_tui().draw_game(True)
+            else:
+                tui.get_tui().draw_game(False)
         elif data.game_object == "next_round":
             self.poker.next_round(game_master, self)
             self.poker.next_player = self.poker.players[self.poker.get_active_players_playing()[0]]  # TODO change with
 
             # changing dealer
             log("next_round", data.game_value, "next_player:", self.poker.next_player)
+            del self.data[data.game_object]
 
             if self.poker.next_player.name == self.own_name:
-                log("[game] It's my turn")
-
-            del self.data[data.game_object]
+                tui.get_tui().draw_game(True)
+            else:
+                tui.get_tui().draw_game(False)
         elif data.game_object == "action:raise":
             s = data.game_value.split(":")
             name = s[0]
@@ -135,6 +139,7 @@ class Game:
             card_string = l.pop(-1)
             self.poker.receive_card_codes(card_string, l, game_master, self)
             log("[game] receive:cards", card_string, l)
+            tui.get_tui().draw_game(self.poker.next_player.name == self.own_name)
         elif data.game_object == "trigger_end":
             self.poker.trigger_end()
             log("[game] trigger_end")

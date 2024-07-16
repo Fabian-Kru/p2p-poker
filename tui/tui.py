@@ -174,14 +174,25 @@ class Tui:
 
     def start_game(self):
         self.node.game_master.start_game(self.node.game_master.get_current_game())
-        # ToDo draw game!
+        #self.draw_game(True)
+
+    def get_player(self, name: str):
+        return self.node.game_master.get_current_game().poker.players[name]
 
     # TODO
-    def draw_game(self, your_draw: bool = True,
-                  raise_chips: bool = True, check: bool = True, fold: bool = True, call: bool = True):
+    def draw_game(self, your_draw: bool = False):
+        current_bet = self.node.game_master.get_current_game().poker.current_bet
+        available_actions = self.get_player(self.node.game_master.get_current_game().own_name).available_actions(current_bet)
+
         player_list = []
-        for player in self.node.game_master.get_current_game().clients():
-            player_list.append(Splitter(player.name, str(player.bet), player.status.name))
+        for player in self.node.game_master.get_current_game().clients:
+            p = self.get_player(player)
+            player_list.append(Splitter(p.name, str(p.bet), p.status.name))
+
+        if "board" in self.node.game_master.get_current_game().poker.card_state:
+            board = self.node.game_master.get_current_game().poker.card_state["board"]
+        else:
+            board = []
 
         with ptg.WindowManager() as manager:
             window = (
@@ -195,30 +206,33 @@ class Tui:
                         Container(
                             Container(
                                 "Open Cards:",
-                                Container(Card.ints_to_pretty_str(self.node.game_master.get_current_game().cards))
+                                Container(Card.ints_to_pretty_str(board))
                             ),
                             Container(
                                 "Your cards",
-                                Container(self.node.game_master.get_current_game().poker.card_state[
-                                              self.node.game_master.get_current_game().myself.name])
+                                Container(Card.ints_to_pretty_str(
+                                    self.node.game_master.get_current_game().poker.card_state[
+                                        self.node.game_master.get_current_game().own_name
+                                    ]
+                                ))
                             ),
-                            "Your Chips: " + str(self.node.game_master.get_current_game().myself.chips),
-                            "Your Bet: " + str(self.node.game_master.get_current_game().myself.bet),
-                            "Everyones Bet: " + str(self.node.game_master.get_current_game().poker.current_bet)
+                            "Your Chips: " + str(self.get_player(self.node.game_master.get_current_game().own_name).chips),
+                            "Your Bet: " + str(self.get_player(self.node.game_master.get_current_game().own_name).bet),
+                            "Everyones Bet: " + str(current_bet)
                         )
                     ),
                     "",
                     Container(
                         "Actions:",
-                        ["Bet", lambda *_: self.draw_bet()] if raise_chips else "(Bet not available)",
-                        ["Check", lambda *_: self.node.poker_check()] if check else "(check not available)",
-                        ["Fold", lambda *_: self.node.poker_fold()] if fold else "(fold not available)",
-                        ["Call", lambda *_: self.node.poker_call()] if call else "(call not available)",
+                        ["Bet", lambda *_: self.draw_bet()] if "raise" in available_actions else "(Bet not available)",
+                        ["Check", lambda *_: self.node.poker_check()] if "check" in available_actions else "(check not available)",
+                        ["Fold", lambda *_: self.node.poker_fold()] if "fold" in available_actions else "(fold not available)",
+                        ["Call", lambda *_: self.node.poker_call()] if "call" in available_actions else "(call not available)",
                     ) if your_draw else "",
                     width=128,
                     box="SINGLE",
                 )
-                .set_title("[210 bold]InGame")
+                .set_title("[210 bold]InGame - " + self.node.game_master.get_current_game().own_name)
                 .center()
             )
 
