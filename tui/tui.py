@@ -1,11 +1,7 @@
-import time
-
 import pytermgui as ptg
 
 from pytermgui import Container, Splitter, Window, InputField
 from treys import Card
-
-import data.game
 
 active_tui = None
 
@@ -62,7 +58,7 @@ class Tui:
                         ["New Game", lambda *_: self.create_game(False)],
                         ["Find Games", lambda *_: self.find_games()],
                         ["Help", lambda *_: self.open_help()],
-                        ["Exit", lambda *_: exit(0)],
+                        ["Exit", lambda *_: self.stop(0)],
                     ),
                     width=100,
                     box="DOUBLE",
@@ -72,6 +68,10 @@ class Tui:
             )
 
             manager.add(window)
+
+    def stop(self):
+        ptg.WindowManager().stop()
+        exit(0)
 
     def open_help(self):
         with ptg.WindowManager() as manager:
@@ -196,6 +196,7 @@ class Tui:
 
         with ptg.WindowManager() as manager:
             for w in manager:
+                w.close()
                 manager.remove(w)
 
             window = (
@@ -236,7 +237,6 @@ class Tui:
                             "Everyones Bet: " + str(current_bet)
                         )
                     ),
-                    is_modal=True,
                     width=128,
                     box="SINGLE",
                 )
@@ -249,6 +249,7 @@ class Tui:
     def call_action(self, action):
         with ptg.WindowManager() as manager:
             for w in manager:
+                w.close()
                 manager.remove(w)
 
             action()
@@ -278,6 +279,7 @@ class Tui:
                 .center()
             )
 
+            window.select(1)
             manager.add(window)
 
     def _bet(self, val):
