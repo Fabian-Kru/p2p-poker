@@ -461,9 +461,13 @@ class Poker:
         return list
 
     def __str__(self):
+        card_string_state = {}
+        for place in self.card_state:
+            card_string_state[place] = Card.ints_to_pretty_string(self.card_state[place])
+            
         return "Poker: " + self.name + " \nPlayers:" + '\n'.join(
             [str(x) + "\n" for x in self.players.values()]) + " \nCard-State:" + str(
-            self.card_state) + " \nCode-State:" + str(
+            card_string_state) + " \nCode-State:" + str(
             self.code_state) + " \nRound:" + str(self.round) + " \nNext:" + str(self.next_player) + " \nOpen:" + str(
             self.open) + " \nBet:" + str(
             self.current_bet)
