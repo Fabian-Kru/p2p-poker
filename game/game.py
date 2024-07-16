@@ -37,7 +37,8 @@ class Game:
     def add_client_local(self, client):
         if client not in self.clients:
             self.clients.append(client)
-            tui.get_tui().create_game(True)
+            if self.is_master:
+                tui.get_tui().create_game(True)
 
     def update(self, data, game_master) -> None:
         self.data[data.game_object] = data.game_value
