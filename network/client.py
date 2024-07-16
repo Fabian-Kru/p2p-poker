@@ -78,6 +78,7 @@ class P2PClient:
                     log("[client] Received unknown: ", data)
             except Exception as e:
                 log("[client] Node Connection closed", e)
+                print(e.with_traceback())
                 sys.exit(1)
 
     def knows_client(self, client_name: str) -> bool:

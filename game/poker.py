@@ -373,10 +373,17 @@ class Poker:
 
             else:
                 for p in game.poker.players:
+                    if p == self.name:
+                        continue
                     game_master.handle_update(
                         p,
                         p,
                         GameUpdateMessage(game, "next_player", next_player))
+
+                game_master.handle_update(
+                    self.name,
+                    self.name,
+                    GameUpdateMessage(game, "next_player", next_player))
 
         self.check_open()
         return status

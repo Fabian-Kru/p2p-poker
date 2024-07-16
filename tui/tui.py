@@ -1,3 +1,5 @@
+import time
+
 import pytermgui as ptg
 
 from pytermgui import Container, Splitter, Window, InputField
@@ -25,8 +27,8 @@ class Tui:
         config:
             InputField:
                 styles:
-                    fill: '[@236]{item}'
-                    value: '[72]{item}'
+                    fill: '[@210 bold]{item}'
+                    value: '[100 bold]{item}'
 
             Label:
                 styles:
@@ -174,12 +176,10 @@ class Tui:
 
     def start_game(self):
         self.node.game_master.start_game(self.node.game_master.get_current_game())
-        #self.draw_game(True)
 
     def get_player(self, name: str):
         return self.node.game_master.get_current_game().poker.players[name]
 
-    # TODO
     def draw_game(self, your_draw: bool = False):
         current_bet = self.node.game_master.get_current_game().poker.current_bet
         available_actions = self.get_player(self.node.game_master.get_current_game().own_name).available_actions(current_bet)
@@ -195,9 +195,24 @@ class Tui:
             board = []
 
         with ptg.WindowManager() as manager:
+            for w in manager:
+                manager.remove(w)
+
             window = (
                 Window(
                     "It's your turn!" if your_draw else "Waiting for opponent...",
+                    "",
+                    (
+                        "Actions:",
+                        ["Bet", lambda *_: self.draw_bet()] if "raise" in available_actions else "(Bet not available)",
+                        ["Check", lambda *_: self.call_action(
+                            self.node.poker_check)] if "check" in available_actions else "(check not available)",
+                        ["Fold", lambda *_: self.call_action(
+                            self.node.poker_fold)] if "fold" in available_actions else "(fold not available)",
+                        ["Call", lambda *_: self.call_action(
+                            self.node.poker_call)] if "call" in available_actions else "(call not available)",
+                    ) if your_draw else "",
+                    "",
                     Splitter(
                         Container(
                             "[210 bold]Player | Bets | Status",
@@ -221,14 +236,7 @@ class Tui:
                             "Everyones Bet: " + str(current_bet)
                         )
                     ),
-                    "",
-                    Container(
-                        "Actions:",
-                        ["Bet", lambda *_: self.draw_bet()] if "raise" in available_actions else "(Bet not available)",
-                        ["Check", lambda *_: self.node.poker_check()] if "check" in available_actions else "(check not available)",
-                        ["Fold", lambda *_: self.node.poker_fold()] if "fold" in available_actions else "(fold not available)",
-                        ["Call", lambda *_: self.node.poker_call()] if "call" in available_actions else "(call not available)",
-                    ) if your_draw else "",
+                    is_modal=True,
                     width=128,
                     box="SINGLE",
                 )
@@ -238,26 +246,32 @@ class Tui:
 
             manager.add(window)
 
-    def draw_bet(self, error: str = ""):
-        field = InputField()
-        field.bind(ptg.keys.RETURN, lambda f, _: self._bet(f.value))
+    def call_action(self, action):
+        with ptg.WindowManager() as manager:
+            for w in manager:
+                manager.remove(w)
 
+            action()
+
+    def draw_bet(self, error: str = ""):
         with ptg.WindowManager() as manager:
             window = (
                 Window(
-                    "[210 bold]" + error,
+                "[210 bold]" + error,
+                    "Your Chips: " + str(self.get_player(self.node.game_master.get_current_game().own_name).chips),
+                    "Your Bet: " + str(self.get_player(self.node.game_master.get_current_game().own_name).bet),
                     "",
-                    Container(
-                        "Your Chips: " + str(self.node.game_master.get_current_game().myself.chips),
-                        "Your Bet: " + str(self.node.game_master.get_current_game().myself.bet),
-                        "",
-                        Splitter(
-                            "Add Bet",
-                            field
-                        )
-                    ),
+                    "Add Bet",
                     "",
-                    width=60,
+                    ["5", lambda *_: self._bet(5)],
+                    ["10", lambda *_: self._bet(10)],
+                    ["50", lambda *_: self._bet(50)],
+                    ["100", lambda *_: self._bet(100)],
+                    ["500", lambda *_: self._bet(500)],
+                    ["1000", lambda *_: self._bet(1000)],
+                    "",
+                    is_modal=True,
+                    width=100,
                     box="SINGLE",
                 )
                 .set_title("[210 bold]InGame")
@@ -267,17 +281,12 @@ class Tui:
             manager.add(window)
 
     def _bet(self, val):
-        if type(val) is not int or val < 1:
-            self.draw_bet("Invalid input.")
-            return
-
-        result = (self.node.game_master
-                  .get_current_game().myself.poker_raise(1, current_bet=0, game_master=self.game_master))
+        result = (self.get_player(self.node.game_master.get_current_game().own_name)
+                  .poker_raise(val,
+                               current_bet=self.node.game_master.get_current_game().poker.current_bet)
+                  )
         if result < 0:
             self.draw_bet("Invalid input.")
-
-        # ToDo
-        self.draw_game(["open1, open2"], ["yours1", "yours2"], 100, 10, 1000)
 
     def draw_end(self, win: bool):
         with ptg.WindowManager() as manager:

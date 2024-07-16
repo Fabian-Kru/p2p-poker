@@ -1,5 +1,6 @@
 import sys
 import threading
+import time
 
 from network.network import P2PNode
 from tui import tui
@@ -35,7 +36,7 @@ except Exception as e:
 
 try:
     while True:
-        pass
+        time.sleep(0.01)
 except (SystemExit, KeyboardInterrupt):
     for client in network.clients:
         client.close_connection()
