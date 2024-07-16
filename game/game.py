@@ -123,6 +123,10 @@ class Game:
 
             to_send = self.poker.get_card_codes(card_string, client_name)
 
+            while to_send is None:
+                to_send = self.poker.get_card_codes(card_string, client_name)
+                if to_send is not None:
+                    break
             log("[game] get:cards", client_name, card_string, to_send)
             if to_send is not None:
                 game_master.handle_update(client_name, client_name, GameUpdateMessage(self, "receive:cards", to_send + [card_string]))

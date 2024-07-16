@@ -106,6 +106,7 @@ class Poker:
             players.new_round()
 
     def request_card_codes(self, card_string):
+        log("[game] requesting card codes", card_string)
         self.card_requests.append(card_string)
         gamemanager.active_game_master.get_master().deliver_card_code(self.game_id, self.name, card_string)
 
